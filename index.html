@@ -204,10 +204,18 @@
   .pf-note { font-size: 11.5px; font-style: italic; color: var(--text-muted); background: var(--warm-white); border-left: 3px solid var(--gold); padding: 8px 10px; border-radius: 6px; margin: 10px 4px; line-height:1.4; }
   .pf-conditional { margin-top: 9px; padding-top: 9px; border-top: 1px dashed var(--border); display:none; }
   .pf-conditional.show { display:block; }
-  .multibool-row { display:grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .multibool-btn { padding: 10px 4px; border: 1.5px solid var(--border); border-radius: 9px; font-size:13px; font-weight:700; color: var(--text-muted); background: var(--warm-white); text-align:center; }
-  .multibool-btn.on-sim { background: var(--sim-bg); border-color: var(--sim); color: var(--sim); }
-  .multibool-btn.on-nao { background: var(--nao-bg); border-color: var(--nao); color: var(--nao); }
+  .pf-multiselect-row { display:flex; flex-wrap:wrap; gap: 6px; }
+  .pf-ms-btn { padding: 9px 13px; border: 1.5px solid var(--border); border-radius: 9px; font-size:12.5px; font-weight:700; color: var(--text-muted); background: var(--warm-white); text-align:center; }
+  .pf-ms-btn.active { background: var(--navy); border-color: var(--navy); color: white; }
+  .pf-ms-btn.active-sim { background: var(--sim-bg); border-color: var(--sim); color: var(--sim); }
+  .pf-ms-btn.active-nao { background: var(--nao-bg); border-color: var(--nao); color: var(--nao); }
+  .pf-allocate-row { display:flex; align-items:center; gap:8px; padding: 7px 2px; border-bottom: 1px dashed var(--border); }
+  .pf-allocate-row:last-child { border-bottom:none; }
+  .pf-allocate-name { flex:1; font-size:12.5px; font-weight:600; color: var(--text-primary); }
+  .pf-allocate-btns { display:flex; gap:5px; }
+  .pf-allocate-btn { padding: 6px 11px; border: 1.5px solid var(--border); border-radius: 7px; font-size: 11px; font-weight:700; color: var(--text-muted); background: var(--warm-white); }
+  .pf-allocate-btn.active { background: var(--navy); border-color: var(--navy); color: white; }
+  .pf-allocate-warning { margin-top: 8px; padding: 8px 10px; background: var(--nao-bg); border: 1.5px solid var(--nao); border-radius: 8px; font-size: 11.5px; font-weight:600; color: var(--nao); }
 
   /* ── BOTTOM BAR ── */
   .bottom-bar {
@@ -360,6 +368,7 @@
 
 const GAMA_OPTIONS = ['Baixa','Média','Alta'];
 const TIPOLOGIA_OPTIONS = ['T1','T2','T3','T4'];
+const APPLIANCE_OPTIONS = ['Placa','Forno','Exaustor','Termoacumulador','Microondas','MLL','MLR','Frigorífico'];
 
 const CHECKLIST_SECTIONS = [
   { id:'est', name:'Estrutura', icon:'🏗️', items:[
@@ -454,9 +463,10 @@ const PREMISSAS_SECTIONS = [
   ]},
   { id:'equipamentos', name:'Equipamentos', icon:'🍳', groups:[
     { label:'Cozinha', fields:[
-      {id:'cz1', label:'Inclui o fornecimento de todos os eletrodomésticos?', type:'multibool'},
-      {id:'cz2', label:'Se não, quais?', type:'text', showIf:{field:'cz1', requires:'nao'}},
-      {id:'cz3', label:'Eletrodomésticos de encastre ou instalação livre?', type:'choice', options:['Encastre','Livre']},
+      {id:'cz1', label:'Inclui o fornecimento de todos os eletrodomésticos?', type:'multiselect', options:['Sim','Não']},
+      {id:'cz2', label:'Se não, quais são para fornecer?', type:'multiselect', options:APPLIANCE_OPTIONS, showIf:{field:'cz1', includes:'Não'}},
+      {id:'cz3', label:'Eletrodomésticos de encastre ou instalação livre?', type:'multiselect', options:['Encastre','Livre']},
+      {id:'cz4', label:'Atribuição por eletrodoméstico', type:'allocate', sourceField:'cz2', sourceGateField:'cz1', sourceGateValue:'Não', fallbackOptions:APPLIANCE_OPTIONS, buckets:['Encastre','Livre'], showIf:{field:'cz3', includesAll:['Encastre','Livre']}},
     ]},
   ]},
   { id:'carpintarias', name:'Carpintarias', icon:'🚪', fields:[
@@ -466,8 +476,8 @@ const PREMISSAS_SECTIONS = [
     {id:'cp4', label:'Manter / recuperar pavimento em madeira existente?', type:'choice', options:['Sim','Não']},
   ]},
   { id:'caixilharias', name:'Caixilharias', icon:'🪟', fields:[
-    {id:'cx1', label:'Manter caixilharia existente?', type:'multibool'},
-    {id:'cx2', label:'Se não, substituição de quais?', type:'text', showIf:{field:'cx1', requires:'nao'}},
+    {id:'cx1', label:'Manter caixilharia existente?', type:'multiselect', options:['Sim','Não']},
+    {id:'cx2', label:'Se não, substituição de quais?', type:'text', showIf:{field:'cx1', includes:'Não'}},
     {id:'cx3', label:'Marquise ou varanda?', type:'choice', options:['Marquise','Varanda','Não aplicável']},
   ], note:'O acabamento exterior de caixilharia a substituir deverá ser conforme a fachada.' },
   { id:'diversos', name:'Diversos', icon:'📋', fields:[
@@ -1235,11 +1245,11 @@ function drawHeroBand(ctx, subtitle) {
   ctx.y = 44;
 }
 
-function drawSectionTitlePdf(ctx, icon, name) {
+function drawSectionTitlePdf(ctx, num, name) {
   const doc = ctx.doc;
   pdfEnsureSpace(ctx, 12);
   doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(PDF_GREEN[0],PDF_GREEN[1],PDF_GREEN[2]);
-  doc.text(icon + '  ' + name.toUpperCase(), ctx.marginL, ctx.y);
+  doc.text(num + '.  ' + name.toUpperCase(), ctx.marginL, ctx.y);
   ctx.y += 2;
   doc.setDrawColor(225,228,232);
   doc.line(ctx.marginL, ctx.y, ctx.pageW-ctx.marginR, ctx.y);
@@ -1254,15 +1264,24 @@ function pdfBadgeInfo(val) {
   if (val === 'nao') return { label:'NÃO', bg:[253,236,234], fg:[192,57,43] };
   if (val === 'parcial') return { label:'PARCIAL', bg:[254,243,224], fg:[217,119,6] };
   if (val === 'na') return { label:'NA', bg:[240,242,245], fg:[107,122,141] };
-  if (val) return { label: val.length>16 ? val.slice(0,16)+'…' : val, bg:[239,236,247], fg:[106,90,168] };
   return { label:'—', bg:[240,242,245], fg:[170,175,182] };
 }
 
 function drawChecklistItemPdf(ctx, label, val, obs) {
   const doc = ctx.doc;
+  const isCanon = OPT_KEYS.indexOf(val) !== -1;
+  const isFree = !!val && !isCanon;
+
   doc.setFont('helvetica','normal'); doc.setFontSize(9.3);
-  const qLines = doc.splitTextToSize(label, ctx.contentW - 34);
+  const qLines = doc.splitTextToSize(label, isCanon ? ctx.contentW - 34 : ctx.contentW);
   const qLh = pdfLineHeight(doc);
+
+  let freeLines = [], freeLh = 0;
+  if (isFree) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    freeLines = doc.splitTextToSize('Resposta: ' + val, ctx.contentW);
+    freeLh = pdfLineHeight(doc);
+  }
   let obsLines = [], obsLh = 0;
   if (obs) {
     doc.setFont('helvetica','italic'); doc.setFontSize(8.3);
@@ -1270,22 +1289,32 @@ function drawChecklistItemPdf(ctx, label, val, obs) {
     obsLh = pdfLineHeight(doc);
   }
   const qBlockH = Math.max(qLines.length*qLh, 6);
-  const blockH = qBlockH + (obs ? obsLines.length*obsLh + 3 : 0) + 5;
+  const freeBlockH = isFree ? freeLines.length*freeLh + 2 : 0;
+  const obsBlockH = obs ? obsLines.length*obsLh + 2 : 0;
+  const blockH = qBlockH + freeBlockH + obsBlockH + 5;
   pdfEnsureSpace(ctx, blockH);
 
   const startY = ctx.y;
   doc.setFont('helvetica','normal'); doc.setFontSize(9.3); doc.setTextColor(26,35,50);
   doc.text(qLines, ctx.marginL, ctx.y + qLh*0.75);
 
-  const badge = pdfBadgeInfo(val);
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-  const badgeW = Math.max(doc.getTextWidth(badge.label)+6, 16);
-  doc.setFillColor(badge.bg[0],badge.bg[1],badge.bg[2]);
-  doc.roundedRect(ctx.pageW - ctx.marginR - badgeW, startY - 0.5, badgeW, 5.5, 1.3, 1.3, 'F');
-  doc.setTextColor(badge.fg[0],badge.fg[1],badge.fg[2]);
-  doc.text(badge.label, ctx.pageW - ctx.marginR - badgeW/2, startY + 3.3, { align:'center' });
+  if (isCanon) {
+    const badge = pdfBadgeInfo(val);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+    const badgeW = Math.max(doc.getTextWidth(badge.label)+6, 16);
+    doc.setFillColor(badge.bg[0],badge.bg[1],badge.bg[2]);
+    doc.roundedRect(ctx.pageW - ctx.marginR - badgeW, startY - 0.5, badgeW, 5.5, 1.3, 1.3, 'F');
+    doc.setTextColor(badge.fg[0],badge.fg[1],badge.fg[2]);
+    doc.text(badge.label, ctx.pageW - ctx.marginR - badgeW/2, startY + 3.3, { align:'center' });
+  }
 
   ctx.y += qBlockH;
+  if (isFree) {
+    ctx.y += 2;
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(106,90,168);
+    doc.text(freeLines, ctx.marginL, ctx.y + freeLh*0.75);
+    ctx.y += freeLines.length*freeLh;
+  }
   if (obs) {
     ctx.y += 2;
     doc.setFont('helvetica','italic'); doc.setFontSize(8.3); doc.setTextColor(PDF_GREY[0],PDF_GREY[1],PDF_GREY[2]);
@@ -1342,8 +1371,8 @@ async function exportChecklistPDF() {
     pdfEnsureSpace(ctx, 24);
     drawChecklistSummaryBoxes(ctx, counts);
 
-    CHECKLIST_SECTIONS.forEach(function(sec) {
-      drawSectionTitlePdf(ctx, sec.icon, sec.name);
+    CHECKLIST_SECTIONS.forEach(function(sec, si) {
+      drawSectionTitlePdf(ctx, si + 1, sec.name);
       sec.items.forEach(function(label, idx) {
         const id = checklistItemId(sec.id, idx);
         drawChecklistItemPdf(ctx, label, state.checklist.answers[id] || '', state.checklist.obs[id] || '');
@@ -1353,8 +1382,8 @@ async function exportChecklistPDF() {
 
     const doc = ctx.doc;
     pdfEnsureSpace(ctx, 10);
-    doc.setFont('helvetica','italic'); doc.setFontSize(7.5); doc.setTextColor(PDF_GREY[0],PDF_GREY[1],PDF_GREY[2]);
-    doc.text('Documento gerado automaticamente · Luvio Consultoria', ctx.marginL, ctx.y + 4);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(60,68,80);
+    doc.text('Pedro Gonçalves  ·  ' + new Date().toLocaleDateString('pt-PT'), ctx.marginL, ctx.y + 4);
 
     await pdfFinish(ctx, 'Checklist_Visita_Tecnica_' + (state.header.idImovel || 'imovel').replace(/[^\w-]+/g,'_') + '.pdf');
   } catch (err) {
@@ -1370,11 +1399,12 @@ async function exportChecklistPDF() {
 // ════════════════════════════════════════
 function pfFieldDisplayValue(f) {
   const v = state.premissas.answers[f.id];
-  if (f.type === 'multibool') {
-    const parts = [];
-    if (v && v.sim) parts.push('Sim');
-    if (v && v.nao) parts.push('Não');
-    return parts.join(' + ') || '—';
+  if (f.type === 'multiselect') {
+    return (Array.isArray(v) && v.length) ? v.join(', ') : '—';
+  }
+  if (f.type === 'allocate') {
+    if (!v || !Object.keys(v).length) return '—';
+    return Object.keys(v).map(function(k) { return k + ': ' + v[k]; }).join('   ·   ');
   }
   return (v !== undefined && v !== null && v !== '') ? String(v) : '—';
 }
@@ -1383,17 +1413,48 @@ function drawPremissasFieldPdf(ctx, f) {
   if (!isFieldVisible(f)) return;
   const doc = ctx.doc;
   const val = pfFieldDisplayValue(f);
+  const labelMaxW = ctx.contentW * 0.55;
+
   doc.setFont('helvetica','normal'); doc.setFontSize(9.3);
-  const labelLines = doc.splitTextToSize(f.label, ctx.contentW*0.6);
+  const labelLines = doc.splitTextToSize(f.label, labelMaxW);
   const lh = pdfLineHeight(doc);
-  const blockH = Math.max(labelLines.length*lh, 6) + 5;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.3);
+  const wrapValue = doc.getTextWidth(val) > (ctx.contentW - labelMaxW - 4);
+  const valueLines = wrapValue ? doc.splitTextToSize(val, ctx.contentW) : [val];
+
+  const blockH = wrapValue
+    ? Math.max(labelLines.length*lh, 6) + valueLines.length*lh + 3 + 5
+    : Math.max(labelLines.length*lh, 6) + 5;
   pdfEnsureSpace(ctx, blockH);
+
   const startY = ctx.y;
-  doc.setTextColor(26,35,50);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.3); doc.setTextColor(26,35,50);
   doc.text(labelLines, ctx.marginL, ctx.y + lh*0.75);
+
   doc.setFont('helvetica','bold'); doc.setFontSize(9.3); doc.setTextColor(PDF_GREEN[0],PDF_GREEN[1],PDF_GREEN[2]);
-  doc.text(val, ctx.pageW-ctx.marginR, startY + lh*0.75, { align:'right' });
-  ctx.y += Math.max(labelLines.length*lh, 6) + 5;
+  if (!wrapValue) {
+    doc.text(val, ctx.pageW-ctx.marginR, startY + lh*0.75, { align:'right' });
+    ctx.y += Math.max(labelLines.length*lh, 6) + 5;
+  } else {
+    ctx.y += Math.max(labelLines.length*lh, 6) + 2;
+    doc.text(valueLines, ctx.marginL, ctx.y + lh*0.75);
+    ctx.y += valueLines.length*lh + 5;
+  }
+
+  if (f.type === 'allocate') {
+    const list = allocateSourceList(f);
+    const cur = (state.premissas.answers[f.id] && typeof state.premissas.answers[f.id] === 'object') ? state.premissas.answers[f.id] : {};
+    const missing = list.filter(function(item) { return !cur[item]; });
+    if (missing.length) {
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.3); doc.setTextColor(192,57,43);
+      const warnLines = doc.splitTextToSize('Por atribuir: ' + missing.join(', '), ctx.contentW);
+      pdfEnsureSpace(ctx, warnLines.length*lh + 4);
+      doc.text(warnLines, ctx.marginL, ctx.y - 1.5);
+      ctx.y += warnLines.length*lh + 3;
+    }
+  }
+
   doc.setDrawColor(232,232,232);
   doc.line(ctx.marginL, ctx.y-2.5, ctx.pageW-ctx.marginR, ctx.y-2.5);
 }
@@ -1422,8 +1483,8 @@ async function exportPremissasPDF() {
     drawHeroBand(ctx, 'Premissas de Projeto');
     drawInfoStrip(ctx);
 
-    PREMISSAS_SECTIONS.forEach(function(sec) {
-      drawSectionTitlePdf(ctx, sec.icon, sec.name);
+    PREMISSAS_SECTIONS.forEach(function(sec, si) {
+      drawSectionTitlePdf(ctx, si + 1, sec.name);
       const doc = ctx.doc;
       if (sec.groups) {
         sec.groups.forEach(function(g) {
@@ -1442,8 +1503,8 @@ async function exportPremissasPDF() {
 
     const doc = ctx.doc;
     pdfEnsureSpace(ctx, 10);
-    doc.setFont('helvetica','italic'); doc.setFontSize(7.5); doc.setTextColor(PDF_GREY[0],PDF_GREY[1],PDF_GREY[2]);
-    doc.text('Documento gerado automaticamente · Luvio Consultoria · a entregar ao projetista', ctx.marginL, ctx.y + 4);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(60,68,80);
+    doc.text('Pedro Gonçalves  ·  ' + new Date().toLocaleDateString('pt-PT'), ctx.marginL, ctx.y + 4);
 
     await pdfFinish(ctx, 'Premissas_Projeto_' + (state.header.idImovel || 'imovel').replace(/[^\w-]+/g,'_') + '.pdf');
   } catch (err) {
@@ -1468,6 +1529,8 @@ function allPremissasFields() {
   });
   return out;
 }
+
+function fieldById(id) { return allPremissasFields().find(function(f) { return f.id === id; }); }
 
 function renderPremissas() {
   const wrap = document.getElementById('pf-sections-wrap');
@@ -1505,11 +1568,13 @@ function renderPremissasFieldHtml(f) {
       const key = choiceKey(opt);
       return `<button type="button" class="choice-btn" id="pfchoice-${f.id}-${key}" onclick="setPremissasChoice('${f.id}','${key}')">${escapeHtml(opt)}</button>`;
     }).join('') + `</div>`;
-  } else if (f.type === 'multibool') {
-    control = `<div class="multibool-row">
-      <button type="button" class="multibool-btn" id="pfmb-${f.id}-sim" onclick="togglePremissasMultibool('${f.id}','sim')">Sim</button>
-      <button type="button" class="multibool-btn" id="pfmb-${f.id}-nao" onclick="togglePremissasMultibool('${f.id}','nao')">Não</button>
-    </div>`;
+  } else if (f.type === 'multiselect') {
+    control = `<div class="pf-multiselect-row">` + f.options.map(function(opt) {
+      const key = choiceKey(opt);
+      return `<button type="button" class="pf-ms-btn" id="pfms-${f.id}-${key}" onclick="togglePremissasMultiselect('${f.id}','${key}')">${escapeHtml(opt)}</button>`;
+    }).join('') + `</div>`;
+  } else if (f.type === 'allocate') {
+    control = `<div id="pfalloc-${f.id}"></div>`;
   } else if (f.type === 'text') {
     control = `<input type="text" class="pf-text-input" id="pftext-${f.id}" oninput="setPremissasText('${f.id}', this.value)" placeholder="Escreve aqui…">`;
   } else if (f.type === 'number') {
@@ -1522,8 +1587,7 @@ function renderPremissasFieldHtml(f) {
   </div>`;
 }
 
-function fieldById(id) { return allPremissasFields().find(function(f) { return f.id === id; }); }
-
+// ── choice (single-select exclusive) ──
 function setPremissasChoice(id, key) {
   const field = fieldById(id);
   if (!field) return;
@@ -1531,6 +1595,7 @@ function setPremissasChoice(id, key) {
   const cur = state.premissas.answers[id];
   state.premissas.answers[id] = (cur === opt) ? '' : opt;
   refreshPremissasChoiceUI(id);
+  refreshConditionalVisibility(id);
   updatePremissasProgress();
   saveState();
 }
@@ -1546,30 +1611,113 @@ function refreshPremissasChoiceUI(id) {
   });
 }
 
-function togglePremissasMultibool(id, which) {
-  const cur = state.premissas.answers[id] && typeof state.premissas.answers[id] === 'object'
-    ? state.premissas.answers[id] : { sim:false, nao:false };
-  cur[which] = !cur[which];
+// ── multiselect (non-exclusive, N options) ──
+function togglePremissasMultiselect(id, key) {
+  const field = fieldById(id);
+  if (!field) return;
+  const opt = field.options.find(function(o) { return choiceKey(o) === key; });
+  if (!opt) return;
+  let cur = Array.isArray(state.premissas.answers[id]) ? state.premissas.answers[id].slice() : [];
+  const idx = cur.indexOf(opt);
+  if (idx === -1) cur.push(opt); else cur.splice(idx, 1);
   state.premissas.answers[id] = cur;
-  refreshMultiboolUI(id);
+  refreshMultiselectUI(id);
   refreshConditionalVisibility(id);
+  refreshAllocateFieldsDependingOn(id);
   updatePremissasProgress();
   saveState();
 }
 
-function refreshMultiboolUI(id) {
-  const val = (state.premissas.answers[id] && typeof state.premissas.answers[id] === 'object') ? state.premissas.answers[id] : {};
-  const simBtn = document.getElementById('pfmb-' + id + '-sim');
-  const naoBtn = document.getElementById('pfmb-' + id + '-nao');
-  if (simBtn) simBtn.classList.toggle('on-sim', !!val.sim);
-  if (naoBtn) naoBtn.classList.toggle('on-nao', !!val.nao);
+function refreshMultiselectUI(id) {
+  const field = fieldById(id);
+  if (!field) return;
+  const cur = Array.isArray(state.premissas.answers[id]) ? state.premissas.answers[id] : [];
+  field.options.forEach(function(opt) {
+    const key = choiceKey(opt);
+    const btn = document.getElementById('pfms-' + id + '-' + key);
+    if (!btn) return;
+    btn.classList.remove('active', 'active-sim', 'active-nao');
+    if (cur.indexOf(opt) !== -1) {
+      if (opt === 'Sim') btn.classList.add('active-sim');
+      else if (opt === 'Não') btn.classList.add('active-nao');
+      else btn.classList.add('active');
+    }
+  });
 }
 
+// ── allocate (dynamic per-item bucket assignment, e.g. encastre/livre) ──
+function allocateSourceList(f) {
+  if (f.sourceGateField) {
+    const gateVal = state.premissas.answers[f.sourceGateField];
+    const gateArr = Array.isArray(gateVal) ? gateVal : [];
+    if (gateArr.indexOf(f.sourceGateValue) !== -1) {
+      const src = state.premissas.answers[f.sourceField];
+      return Array.isArray(src) ? src : [];
+    }
+    return f.fallbackOptions || [];
+  }
+  const src = state.premissas.answers[f.sourceField];
+  return Array.isArray(src) ? src : (f.fallbackOptions || []);
+}
+
+function renderAllocateField(id) {
+  const f = fieldById(id);
+  const container = document.getElementById('pfalloc-' + id);
+  if (!f || !container) return;
+  const list = allocateSourceList(f);
+  const cur = (state.premissas.answers[id] && typeof state.premissas.answers[id] === 'object') ? state.premissas.answers[id] : {};
+  if (!list.length) {
+    container.innerHTML = `<div class="pf-note" style="margin:4px 0 0 0;">Sem eletrodomésticos identificados no ponto anterior.</div>`;
+    return;
+  }
+  const rows = list.map(function(item) {
+    const ikey = choiceKey(item);
+    const btns = f.buckets.map(function(b) {
+      const bkey = choiceKey(b);
+      const active = cur[item] === b ? ' active' : '';
+      return `<button type="button" class="pf-allocate-btn${active}" onclick="setAllocateBucket('${id}','${ikey}','${bkey}')">${escapeHtml(b)}</button>`;
+    }).join('');
+    return `<div class="pf-allocate-row">
+      <div class="pf-allocate-name">${escapeHtml(item)}</div>
+      <div class="pf-allocate-btns">${btns}</div>
+    </div>`;
+  }).join('');
+  const missing = list.filter(function(item) { return !cur[item]; });
+  const warning = missing.length ? `<div class="pf-allocate-warning">⚠ Falta atribuir: ${missing.map(escapeHtml).join(', ')}</div>` : '';
+  container.innerHTML = rows + warning;
+}
+
+function setAllocateBucket(id, itemKey, bucketKey) {
+  const f = fieldById(id);
+  if (!f) return;
+  const list = allocateSourceList(f);
+  const item = list.find(function(x) { return choiceKey(x) === itemKey; });
+  const bucket = f.buckets.find(function(b) { return choiceKey(b) === bucketKey; });
+  if (!item || !bucket) return;
+  const cur = (state.premissas.answers[id] && typeof state.premissas.answers[id] === 'object') ? Object.assign({}, state.premissas.answers[id]) : {};
+  cur[item] = (cur[item] === bucket) ? undefined : bucket;
+  if (!cur[item]) delete cur[item];
+  state.premissas.answers[id] = cur;
+  renderAllocateField(id);
+  updatePremissasProgress();
+  saveState();
+}
+
+function refreshAllocateFieldsDependingOn(changedId) {
+  allPremissasFields().forEach(function(f) {
+    if (f.type === 'allocate' && (f.sourceField === changedId || f.sourceGateField === changedId)) {
+      renderAllocateField(f.id);
+    }
+  });
+}
+
+// ── conditional visibility (showIf: includes / includesAll / requires) ──
 function refreshConditionalVisibility(parentId) {
   allPremissasFields().forEach(function(f) {
     if (f.showIf && f.showIf.field === parentId) {
       const el = document.getElementById('pfcond-' + f.id);
       if (el) el.classList.toggle('show', isFieldVisible(f));
+      if (f.type === 'allocate') renderAllocateField(f.id);
     }
   });
 }
@@ -1582,14 +1730,19 @@ function setPremissasText(id, val) {
 
 function isFieldAnswered(f) {
   const v = state.premissas.answers[f.id];
-  if (f.type === 'multibool') return !!(v && (v.sim || v.nao));
+  if (f.type === 'multiselect') return Array.isArray(v) && v.length > 0;
+  if (f.type === 'allocate') return v && Object.keys(v).length > 0;
   return v !== undefined && v !== null && v !== '';
 }
 
 function isFieldVisible(f) {
   if (!f.showIf) return true;
   const parentVal = state.premissas.answers[f.showIf.field];
-  return !!(parentVal && parentVal[f.showIf.requires]);
+  const arr = Array.isArray(parentVal) ? parentVal : [];
+  if (f.showIf.includes) return arr.indexOf(f.showIf.includes) !== -1;
+  if (f.showIf.includesAll) return f.showIf.includesAll.every(function(v) { return arr.indexOf(v) !== -1; });
+  if (f.showIf.requires) return !!(parentVal && parentVal[f.showIf.requires]);
+  return true;
 }
 
 function updatePremissasProgress() {
@@ -1614,7 +1767,8 @@ function updatePremissasProgress() {
 function hydratePremissasUI() {
   allPremissasFields().forEach(function(f) {
     if (f.type === 'choice') refreshPremissasChoiceUI(f.id);
-    else if (f.type === 'multibool') refreshMultiboolUI(f.id);
+    else if (f.type === 'multiselect') refreshMultiselectUI(f.id);
+    else if (f.type === 'allocate') renderAllocateField(f.id);
     else if (f.type === 'text' || f.type === 'number') {
       const el = document.getElementById('pftext-' + f.id);
       if (el) el.value = (state.premissas.answers[f.id] != null) ? state.premissas.answers[f.id] : '';
