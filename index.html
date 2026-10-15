@@ -10,7 +10,7 @@
 <title>Visita Técnica · Luvio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.3/jspdf.umd.min.js"></script>
 <style>
   :root {
     --navy: #406053;
@@ -41,7 +41,7 @@
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     text-rendering: geometricPrecision;
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: var(--sab);
   }
   .screen { display: none; width: 100%; min-height: 100svh; }
   .screen.active { display: block; }
@@ -50,7 +50,7 @@
 
   /* ── HOME SCREEN ── */
   #home-screen {
-    padding: 24px 16px 48px 16px;
+    padding: calc(24px + var(--sat)) 16px calc(48px + var(--sab)) 16px;
     background: linear-gradient(160deg, var(--navy) 0%, var(--navy-mid) 60%, var(--navy-light) 100%);
   }
   .home-card {
@@ -131,7 +131,7 @@
   .app-screen { background: var(--cream); padding-bottom: 96px; }
   .app-header {
     background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-    padding: 16px 16px 14px 16px; position: sticky; top: 0; z-index: 20; box-shadow: var(--shadow-md);
+    padding: calc(16px + var(--sat)) 16px 14px 16px; position: sticky; top: 0; z-index: 20; box-shadow: var(--shadow-md);
   }
   .hdr-row { display: flex; align-items: center; gap: 11px; }
   .hdr-logo-sm { width: 38px; height: auto; border-radius: 6px; flex-shrink: 0; background: white; padding: 2px; }
@@ -220,7 +220,7 @@
   /* ── BOTTOM BAR ── */
   .bottom-bar {
     position: fixed; left:0; right:0; bottom:0; z-index: 30;
-    display:flex; gap:10px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)) 14px;
+    display:flex; gap:10px; padding: 12px 14px calc(12px + var(--sab)) 14px;
     background: white; border-top: 1px solid var(--border); box-shadow: 0 -4px 16px rgba(26,35,50,.1);
   }
   .bottom-btn { flex:1; padding: 13px; border-radius: var(--radius); font-size: 14px; font-weight: 700; display:flex; align-items:center; justify-content:center; gap:7px; }
@@ -237,6 +237,56 @@
     .bottom-bar { justify-content: center; }
     .bottom-bar .bottom-btn { max-width: 260px; }
   }
+
+  /* ── Margens de segurança (barras do sistema no Android; 0 no browser) ── */
+  :root {
+    --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+    --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  }
+
+  /* ── Ações do item: observações + fotografia ── */
+  .item-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .item-act-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 9px 6px; border: 1.5px solid var(--border); border-radius: 9px;
+    font-size: 12px; font-weight: 600; color: var(--text-muted); background: var(--warm-white);
+  }
+  .item-act-btn.has { color: var(--navy); border-color: var(--navy); background: #eef3f0; }
+
+  /* ── Fotografias ── */
+  .photo-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .photo-row:empty { display: none; }
+  .photo-thumb-wrap { position: relative; display: inline-block; }
+  .photo-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 9px; border: 1.5px solid var(--border); background: var(--warm-white); display: block; cursor: pointer; }
+  .photo-thumb.ph { display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--text-muted); }
+  .photo-thumb-wrap.is-uploading .photo-thumb { opacity: 0.45; }
+  .photo-spinner { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; }
+  .photo-thumb-wrap.is-uploading .photo-spinner { display: flex; }
+  .photo-spinner svg { width: 20px; height: 20px; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .photo-fail-badge { display: none; position: absolute; bottom: 3px; right: 3px; background: #c0392b; color: white; border-radius: 50%; width: 17px; height: 17px; font-size: 11px; line-height: 17px; text-align: center; font-weight: 700; }
+  .photo-thumb-wrap.is-failed .photo-fail-badge { display: block; }
+  .photo-delete-btn { display: none; position: absolute; top: 3px; right: 3px; width: 21px; height: 21px; border-radius: 50%; background: rgba(0,0,0,0.65); color: white; font-size: 14px; line-height: 21px; text-align: center; cursor: pointer; font-weight: 700; z-index: 2; }
+  .photo-thumb-wrap:hover .photo-delete-btn, .photo-thumb-wrap.show-delete .photo-delete-btn { display: block; }
+  .photo-thumb-wrap.is-uploading .photo-delete-btn { display: none !important; }
+
+  /* ── Janelas: ver fotografia e escolher origem ── */
+  #photo-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; align-items: center; justify-content: center; }
+  #photo-modal.open { display: flex; }
+  #photo-modal img { max-width: 96vw; max-height: 88vh; object-fit: contain; border-radius: 6px; }
+  .modal-close { position: absolute; top: calc(12px + var(--sat)); right: 14px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.18); color: white; font-size: 22px; line-height: 38px; text-align: center; }
+  #photo-source-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 190; display: none; align-items: flex-end; justify-content: center; }
+  .psm-sheet { width: 100%; max-width: 520px; background: white; border-radius: 18px 18px 0 0; padding: 16px 16px calc(16px + var(--sab)) 16px; }
+  .psm-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-align: center; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .psm-btn { width: 100%; padding: 15px; border-radius: var(--radius); font-size: 15px; font-weight: 700; margin-bottom: 9px; border: 1.5px solid var(--border); background: var(--warm-white); color: var(--text-primary); }
+  .psm-btn.primary { background: var(--navy); border-color: var(--navy); color: white; }
+  .psm-btn.cancel { color: var(--text-muted); margin-bottom: 0; background: white; }
+
+  #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.82); z-index: 250; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  #loading-overlay.open { display: flex; }
+  .loading-spinner { width: 38px; height: 38px; border: 4px solid var(--border); border-top-color: var(--navy); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .app-mode-line { text-align: center; font-size: 10.5px; font-weight: 600; color: var(--text-muted); margin-top: 14px; }
+  #loading-text { font-size: 13px; font-weight: 700; color: var(--navy); }
 </style>
 </head>
 <body>
@@ -301,6 +351,7 @@
         <button class="home-utility-btn danger" onclick="clearAllData()">✕ Limpar</button>
       </div>
       <input type="file" id="home-file-input" accept="application/json" onchange="importSessionFile(event)">
+      <div class="app-mode-line" id="app-mode-line"></div>
 
     </div>
   </div>
@@ -316,9 +367,9 @@
         <div class="hdr-title">Visita Técnica</div>
         <div class="hdr-subtitle" id="cl-hdr-subtitle">—</div>
       </div>
-      <div class="hdr-drive-pill">
+      <div class="hdr-drive-pill" onclick="handleDriveBarClick()" style="cursor:pointer">
         <div class="hdr-drive-dot" id="cl-drive-dot"></div>
-        <div class="hdr-drive-label">Drive</div>
+        <div class="hdr-drive-label" id="cl-drive-label">Drive</div>
       </div>
     </div>
     <div class="progress-wrap">
@@ -342,9 +393,9 @@
         <div class="hdr-title">Premissas de Projeto</div>
         <div class="hdr-subtitle" id="pf-hdr-subtitle">—</div>
       </div>
-      <div class="hdr-drive-pill">
+      <div class="hdr-drive-pill" onclick="handleDriveBarClick()" style="cursor:pointer">
         <div class="hdr-drive-dot" id="pf-drive-dot"></div>
-        <div class="hdr-drive-label">Drive</div>
+        <div class="hdr-drive-label" id="pf-drive-label">Drive</div>
       </div>
     </div>
     <div class="progress-wrap">
@@ -358,6 +409,26 @@
     <button class="bottom-btn bottom-btn-pdf" id="pf-pdf-btn" onclick="exportPremissasPDF()">⭳ Exportar PDF</button>
   </div>
 </div>
+
+<!-- ══════════════════ FOTOGRAFIAS (janelas e campos de ficheiro) ══════════════════ -->
+<input type="file" id="file-input-camera" accept="image/*" capture="environment" style="display:none" onchange="handlePhotos(event)">
+<input type="file" id="file-input-gallery" accept="image/*" multiple style="display:none" onchange="handlePhotos(event)">
+
+<div id="photo-source-modal">
+  <div class="psm-sheet">
+    <div class="psm-title">Adicionar fotografia</div>
+    <button type="button" class="psm-btn primary" id="psm-camera">📷 Tirar fotografia</button>
+    <button type="button" class="psm-btn" id="psm-gallery">🖼️ Escolher da galeria</button>
+    <button type="button" class="psm-btn cancel" id="psm-cancel">Cancelar</button>
+  </div>
+</div>
+
+<div id="photo-modal">
+  <div class="modal-close" onclick="closePhoto()">×</div>
+  <img id="photo-modal-img" alt="">
+</div>
+
+<div id="loading-overlay"><div class="loading-spinner"></div><div id="loading-text">A carregar…</div></div>
 
 <div id="toast"></div>
 
@@ -490,12 +561,45 @@ const PREMISSAS_SECTIONS = [
 // ════════════════════════════════════════
 //  ESTADO GLOBAL
 // ════════════════════════════════════════
-let state = {
-  header: { idImovel:'', morada:'', cp:'', concelho:'', gama:'', tipologia:'', area:'' },
-  checklist: { answers:{}, obs:{} },
-  premissas: { answers:{} },
-};
+function newEmptyState() {
+  return {
+    header: { idImovel:'', morada:'', cp:'', concelho:'', gama:'', tipologia:'', area:'' },
+    checklist: { answers:{}, obs:{}, photos:{} },   // photos: itemId -> [{driveId, name, mimeType, status, tempKey?}] — NUNCA base64
+    premissas: { answers:{} },
+    sessionKey: null,   // "ID - Morada - Visita técnica" a que estas respostas pertencem
+  };
+}
+
+function normalizeState(s) {
+  s = s || {};
+  const out = Object.assign(newEmptyState(), s);
+  out.header = Object.assign(newEmptyState().header, s.header || {});
+  out.checklist = Object.assign({ answers:{}, obs:{}, photos:{} }, s.checklist || {});
+  out.checklist.answers = out.checklist.answers || {};
+  out.checklist.obs = out.checklist.obs || {};
+  out.checklist.photos = out.checklist.photos || {};
+  out.premissas = Object.assign({ answers:{} }, s.premissas || {});
+  out.premissas.answers = out.premissas.answers || {};
+  return out;
+}
+
+let state = newEmptyState();
 let activeFlow = null; // 'checklist' | 'premissas' | null
+let currentPhotoItemId = null;
+let lastLocalTs = 0;   // carimbo da última gravação local (decide Drive vs local ao retomar uma visita)
+
+function sessionHasData() {
+  const c = state.checklist, p = state.premissas;
+  if (Object.keys(c.answers).some(function(k) { return c.answers[k]; })) return true;
+  if (Object.keys(c.obs).some(function(k) { return c.obs[k]; })) return true;
+  if (Object.keys(c.photos).some(function(k) { return (c.photos[k] || []).length; })) return true;
+  return Object.keys(p.answers).some(function(k) {
+    const v = p.answers[k];
+    if (Array.isArray(v)) return v.length > 0;
+    if (v && typeof v === 'object') return Object.keys(v).length > 0;
+    return v !== undefined && v !== null && v !== '';
+  });
+}
 
 // ════════════════════════════════════════
 //  GOOGLE DRIVE INTEGRATION (reaproveitado da Vistoria Final de Obra)
@@ -514,13 +618,88 @@ const driveState = {
   status: 'disconnected',   // 'disconnected' | 'connecting' | 'connected'
   connected: false,
   parentFolderId: null,
+  photosFolderId: null,
+  sectionFolderIds: {},      // nome da pasta de secção -> id no Drive
   projectFolderName: null,
+  projectFolderCreated: false,
+  sessionLoadedFor: null,    // chave da visita já lida do Drive nesta execução da app
   jsonFileId: null,
 };
 
 let isDirty = false;
 let isSavingToDrive = false;
 let autosaveTimer = null;
+
+const DRIVE_PHOTOS_SUBFOLDER = 'Fotografias';
+
+const photoBlobCache = {};      // driveId | tempKey -> objectURL (miniatura) para as pré-visualizações
+const pdfPhotoCache = {};       // driveId -> { src (JPEG normalizado), ratio } já pronto para o PDF
+
+// ════════════════════════════════════════
+//  APK (Capacitor) — plataforma nativa
+// ════════════════════════════════════════
+// Dentro da APK a página corre num WebView do Capacitor, que injeta o objeto
+// window.Capacitor antes dos scripts da página. Na PWA (browser) esse objeto
+// não existe: IS_NATIVE fica false e tudo o que é nativo fica desligado, por
+// isso o comportamento da PWA não muda.
+const IS_NATIVE = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+let nativeAPI = null;
+const nativeReady = !IS_NATIVE ? Promise.resolve(null) : new Promise(function(resolve) {
+  const s = document.createElement('script');
+  s.src = 'native.js';
+  s.onload = function() { nativeAPI = window.NativeAPI || null; resolve(nativeAPI); };
+  s.onerror = function() { console.warn('native.js não carregou'); resolve(null); };
+  document.head.appendChild(s);
+});
+
+// Ligação ao Drive na APK: usa o AuthorizationClient do Google Play Services
+// (plugin DriveAuth). Depois da 1.ª autorização o token renova-se sozinho,
+// sem ecrãs nem redirecionamentos — acaba o login de hora a hora da PWA.
+const NATIVE_TOKEN_TTL_MS = 45 * 60 * 1000;   // o token vale ~1 h; renova-se antes
+let _nativeAuthChain = Promise.resolve();      // serializa pedidos: nunca há 2 em simultâneo
+
+function nativeAuthorize(interactive) {
+  const run = _nativeAuthChain.then(async function() {
+    // outra chamada pode já ter renovado o token entretanto
+    if (driveState.accessToken && Date.now() < driveState.tokenExpiresAt) return driveState.accessToken;
+    const api = await nativeReady;
+    if (!api) throw new Error('Plugins nativos indisponíveis.');
+    try {
+      const res = await api.DriveAuth.authorize({ interactive: !!interactive });
+      driveState.accessToken = res.accessToken;
+      driveState.tokenExpiresAt = Date.now() + NATIVE_TOKEN_TTL_MS;
+      setDriveStatus('connected');
+      onDriveConnected();
+      return res.accessToken;
+    } catch (err) {
+      driveState.accessToken = null;
+      setDriveStatus('disconnected');
+      throw err;
+    }
+  });
+  _nativeAuthChain = run.catch(function() {});
+  return run;
+}
+
+// Tenta ligar em silêncio (sem ecrãs), com limite de tempo — nunca bloqueia o arranque.
+async function nativeSilentConnect(ms) {
+  if (!IS_NATIVE || driveState.connected) return;
+  try {
+    await Promise.race([
+      nativeAuthorize(false),
+      new Promise(function(_, reject) { setTimeout(function() { reject(new Error('timeout')); }, ms); }),
+    ]);
+  } catch (e) { /* segue sem Drive; o utilizador liga no indicador "Drive" */ }
+}
+
+function nativeAuthErrorMessage(err) {
+  const code = err && err.code ? String(err.code) : '';
+  const msg = String((err && err.message) || err || '');
+  if (code === 'cancelled' || /cancel/i.test(msg)) return 'Ligação ao Drive cancelada.';
+  if (code === 'api_10' || /DEVELOPER_ERROR|\b10:/.test(msg)) return 'Google Cloud: o cliente Android (pacote/SHA-1) não corresponde a esta APK — ver instruções.';
+  if (code === 'api_7' || /network/i.test(msg)) return 'Sem ligação à internet.';
+  return 'Não foi possível ligar ao Google Drive' + (code ? ' (' + code + ')' : '') + '.';
+}
 
 // ── OAuth via redirect de página completa (sem popups) ──
 // Ver nota técnica original na Vistoria Final de Obra: popups falham
@@ -555,6 +734,11 @@ function buildDriveAuthUrl() {
 }
 
 function connectDrive(manual) {
+  if (IS_NATIVE) {
+    // APK: login nativo do Google (sem sair da app)
+    setDriveStatus('connecting');
+    return nativeAuthorize(true);
+  }
   try { saveState(); } catch (e) {}
   setDriveStatus('connecting');
   window.location.href = buildDriveAuthUrl();
@@ -593,6 +777,11 @@ function consumeDriveRedirectToken() {
 
 async function ensureValidToken() {
   if (driveState.accessToken && Date.now() < driveState.tokenExpiresAt) return driveState.accessToken;
+  if (IS_NATIVE) {
+    // APK: renovação silenciosa pelo Google Play Services (sem ecrãs)
+    try { return await nativeAuthorize(false); }
+    catch (e) { throw new Error('Sessão do Drive expirou — toque no indicador "Drive" para voltar a ligar.'); }
+  }
   driveState.accessToken = null;
   setDriveStatus('disconnected');
   throw new Error('Sessão do Drive expirou — toque no indicador "Drive" para voltar a ligar.');
@@ -600,11 +789,28 @@ async function ensureValidToken() {
 
 async function driveApiFetch(url, options) {
   options = options || {};
-  const token = await ensureValidToken();
+  let token = await ensureValidToken();
   const sep = url.indexOf('?') >= 0 ? '&' : '?';
-  const finalUrl = url + sep + 'key=' + DRIVE_API_KEY;
-  const headers = Object.assign({}, options.headers, { 'Authorization': 'Bearer ' + token });
-  const res = await fetch(finalUrl, Object.assign({}, options, { headers: headers }));
+  // Na APK o pedido não tem a origem "pedroluvio.github.io": a chave de API
+  // (que pode estar limitada a esse domínio) é dispensável — o token OAuth
+  // já identifica a app.
+  const finalUrl = IS_NATIVE ? url : url + sep + 'key=' + DRIVE_API_KEY;
+  const send = function(t) {
+    const headers = Object.assign({}, options.headers, { 'Authorization': 'Bearer ' + t });
+    return fetch(finalUrl, Object.assign({}, options, { headers: headers }));
+  };
+  let res = await send(token);
+  if (res.status === 401 && IS_NATIVE) {
+    // Token rejeitado: limpa-o da cache do Play Services e pede outro, sem ecrãs
+    const bad = driveState.accessToken;
+    driveState.accessToken = null;
+    try {
+      const api = await nativeReady;
+      if (api && bad) await api.DriveAuth.clearToken({ accessToken: bad });
+      token = await nativeAuthorize(false);
+      res = await send(token);
+    } catch (e) { /* cai para o erro abaixo */ }
+  }
   if (res.status === 401) {
     driveState.accessToken = null;
     setDriveStatus('disconnected');
@@ -630,7 +836,18 @@ function setDriveStatus(s) {
     const d = document.getElementById(id);
     if (d) d.classList.toggle('on', on);
   });
+  const pillText = on ? 'Drive ✓' : (s === 'connecting' ? 'Drive…' : 'Drive');
+  ['cl-drive-label','pf-drive-label'].forEach(function(id) {
+    const l = document.getElementById(id);
+    if (l) l.textContent = pillText;
+  });
   if (s === 'connected') startAutosaveTimer(); else stopAutosaveTimer();
+}
+
+// Chamado quando o Drive acabou de ligar (login nativo ou regresso do login Google):
+// se já estamos na checklist, carrega as miniaturas das fotografias guardadas.
+function onDriveConnected() {
+  if (activeFlow === 'checklist') hydrateChecklistPhotos();
 }
 
 function handleDriveBarClick() {
@@ -639,7 +856,11 @@ function handleDriveBarClick() {
     showToast('Drive ligado' + (driveState.projectFolderName ? ' — ' + driveState.projectFolderName : '') + '.');
     return;
   }
-  connectDrive(true);
+  const p = connectDrive(true);
+  if (IS_NATIVE) {
+    p.then(function() { showToast('Ligado ao Google Drive.'); })
+     .catch(function(err) { console.warn('Drive nativo:', err); showToast(nativeAuthErrorMessage(err)); });
+  }
 }
 
 function escapeDriveQuery(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
@@ -680,18 +901,236 @@ function buildProjectFolderName() {
   return [id, m, 'Visita técnica'].filter(Boolean).join(' - ');
 }
 
-async function ensureProjectFolders() {
+// Procura antes de criar; chamadas simultâneas (autosave + fotografia) partilham
+// a mesma promessa para nunca criar a pasta do imóvel duas vezes.
+let _projectFoldersInFlight = null;
+function ensureProjectFolders() {
   const folderName = buildProjectFolderName();
-  if (!folderName) throw new Error('Indique o ID do imóvel ou a morada antes de sincronizar com o Drive.');
+  if (!folderName) return Promise.reject(new Error('Indique o ID do imóvel ou a morada antes de sincronizar com o Drive.'));
   if (driveState.parentFolderId && driveState.projectFolderName === folderName) {
-    return { parentFolderId: driveState.parentFolderId };
+    return Promise.resolve({ parentFolderId: driveState.parentFolderId });
   }
-  const parentFolderId = await findOrCreateFolder(folderName, null);
-  driveState.parentFolderId = parentFolderId;
-  driveState.projectFolderName = folderName;
-  driveState.jsonFileId = null;
-  setDriveStatus(driveState.status);
-  return { parentFolderId: parentFolderId };
+  if (_projectFoldersInFlight && _projectFoldersInFlight.name === folderName) return _projectFoldersInFlight.promise;
+  const p = (async function() {
+    let parentFolderId = await findFolder(folderName, null);
+    driveState.projectFolderCreated = !parentFolderId;   // diagnóstico: a pasta já existia no Drive?
+    if (!parentFolderId) parentFolderId = await createFolder(folderName, null);
+    driveState.parentFolderId = parentFolderId;
+    driveState.photosFolderId = null;
+    driveState.sectionFolderIds = {};
+    driveState.projectFolderName = folderName;
+    driveState.jsonFileId = null;
+    setDriveStatus(driveState.status);
+    return { parentFolderId: parentFolderId };
+  })().finally(function() {
+    if (_projectFoldersInFlight && _projectFoldersInFlight.promise === p) _projectFoldersInFlight = null;
+  });
+  _projectFoldersInFlight = { name: folderName, promise: p };
+  return p;
+}
+
+// ════════════════════════════════════════
+//  FOTOGRAFIAS — pastas por secção no Drive
+//  <imóvel>/Fotografias/<N - Secção>/<N.item Pergunta - data-hora>.jpg
+// ════════════════════════════════════════
+let _photosFolderInFlight = null;
+function ensurePhotosFolder() {
+  if (driveState.photosFolderId) return Promise.resolve(driveState.photosFolderId);
+  if (_photosFolderInFlight) return _photosFolderInFlight;
+  const p = (async function() {
+    await ensureProjectFolders();
+    const id = await findOrCreateFolder(DRIVE_PHOTOS_SUBFOLDER, driveState.parentFolderId);
+    driveState.photosFolderId = id;
+    return id;
+  })().finally(function() { _photosFolderInFlight = null; });
+  _photosFolderInFlight = p;
+  return p;
+}
+
+// itemId = "<secId>_<índice>" (ex: "est_1") → secção e pergunta correspondentes
+function getItemInfo(itemId) {
+  const i = String(itemId).lastIndexOf('_');
+  if (i < 0) return null;
+  const secId = itemId.slice(0, i), idx = parseInt(itemId.slice(i + 1), 10);
+  for (let si = 0; si < CHECKLIST_SECTIONS.length; si++) {
+    const sec = CHECKLIST_SECTIONS[si];
+    if (sec.id === secId && sec.items[idx] !== undefined) {
+      return { secNum: si + 1, secName: sec.name, itemNum: idx + 1, label: sec.items[idx] };
+    }
+  }
+  return null;
+}
+function sectionFolderName(info) { return info ? info.secNum + ' - ' + info.secName : null; }
+
+function safeFileFragment(s, max) {
+  return String(s).replace(/[\\\/]+/g, '-').replace(/[:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max || 40).trim();
+}
+
+let _photoSeq = 0;
+function buildPhotoFilename(file, itemId) {
+  const ext = (file.type === 'image/png') ? 'png' : 'jpg';
+  _photoSeq++;
+  const info = getItemInfo(itemId);
+  const d = new Date();
+  const pad = function(n) { return String(n).padStart(2, '0'); };
+  const stamp = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  const prefix = info ? info.secNum + '.' + info.itemNum + ' ' + safeFileFragment(info.label, 45) : itemId;
+  return prefix + ' - ' + stamp + '-' + _photoSeq + '.' + ext;
+}
+
+// Chamadas concorrentes para a MESMA secção (fotos tiradas em sequência rápida)
+// partilham a mesma promessa, para nunca haver subpastas duplicadas.
+const _sectionFolderInFlight = {};
+async function ensureSectionFolder(sectionName) {
+  const photosFolderId = await ensurePhotosFolder();
+  if (!sectionName) return photosFolderId;
+  if (driveState.sectionFolderIds[sectionName]) return driveState.sectionFolderIds[sectionName];
+  if (_sectionFolderInFlight[sectionName]) return _sectionFolderInFlight[sectionName];
+  const p = findOrCreateFolder(sectionName, photosFolderId).then(function(id) {
+    driveState.sectionFolderIds[sectionName] = id;
+    delete _sectionFolderInFlight[sectionName];
+    return id;
+  }).catch(function(err) {
+    delete _sectionFolderInFlight[sectionName];
+    throw err;
+  });
+  _sectionFolderInFlight[sectionName] = p;
+  return p;
+}
+
+// Envia os bytes da imagem para a pasta da secção. Devolve só a referência do Drive.
+async function uploadPhotoToDrive(file, itemId) {
+  const sectionFolderId = await ensureSectionFolder(sectionFolderName(getItemInfo(itemId)));
+  const metadata = { name: buildPhotoFilename(file, itemId), parents: [sectionFolderId] };
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('file', file);
+  const res = await driveApiFetch(DRIVE_UPLOAD_FILES + '?uploadType=multipart&fields=id,name,mimeType', {
+    method: 'POST',
+    body: form,
+  });
+  if (!res.ok) throw new Error('Falha ao enviar fotografia para o Drive (' + res.status + ')');
+  const data = await res.json();
+  return { driveId: data.id, name: data.name, mimeType: data.mimeType || file.type };
+}
+
+function blobToDataUrl(blob) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function() { resolve(reader.result); };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Reduz para uma miniatura ANTES de guardar em cache: guardar fotos em resolução
+// de câmara (vários MB cada) em memória é o que mais facilmente esgota o WebView.
+function downscaleImageToObjectUrl(srcUrl, maxDim) {
+  return new Promise(function(resolve, reject) {
+    let settled = false;
+    const timeoutId = setTimeout(function() {
+      if (settled) return;
+      settled = true;
+      reject(new Error('Tempo esgotado a gerar miniatura'));
+    }, 8000);
+    const img = new Image();
+    img.onload = function() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      try {
+        const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function(blob) {
+          if (!blob) { reject(new Error('Falha ao gerar miniatura')); return; }
+          resolve(URL.createObjectURL(blob));
+        }, 'image/jpeg', 0.7);
+      } catch (e) { reject(e); }
+    };
+    img.onerror = function() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      reject(new Error('Falha ao carregar imagem para miniatura'));
+    };
+    img.src = srcUrl;
+  });
+}
+
+const PHOTO_THUMB_MAX_DIM = 360;
+
+async function fetchPhotoFullBlob(driveId) {
+  const res = await driveApiFetch(DRIVE_API_FILES + '/' + driveId + '?alt=media');
+  if (!res.ok) throw new Error('Não foi possível obter a fotografia do Drive (' + res.status + ')');
+  return await res.blob();
+}
+
+async function fetchPhotoBlob(driveId) {
+  if (photoBlobCache[driveId]) return photoBlobCache[driveId];
+  const fullBlob = await fetchPhotoFullBlob(driveId);
+  const fullUrl = URL.createObjectURL(fullBlob);
+  try {
+    const thumbUrl = await downscaleImageToObjectUrl(fullUrl, PHOTO_THUMB_MAX_DIM);
+    URL.revokeObjectURL(fullUrl);
+    photoBlobCache[driveId] = thumbUrl;
+  } catch (e) {
+    photoBlobCache[driveId] = fullUrl;   // sem miniatura (raro): usa a original
+  }
+  return photoBlobCache[driveId];
+}
+
+// Fotografia (já no Drive, ou ainda só local) → data URI base64 para o PDF.
+// Não fica em cache: a versão pronta para o PDF (reduzida) é guardada em pdfPhotoCache.
+async function resolvePhotoDataUrl(entry) {
+  if (entry.driveId) return await blobToDataUrl(await fetchPhotoFullBlob(entry.driveId));
+  const cachedBlobUrl = entry.tempKey && photoBlobCache[entry.tempKey];
+  if (cachedBlobUrl) {
+    try { return await blobToDataUrl(await (await fetch(cachedBlobUrl)).blob()); } catch (e) { /* ainda não está no Drive */ }
+  }
+  return null;
+}
+
+// Só referências do Drive vão para o JSON (nunca base64, nunca envios incompletos).
+function getCleanPhotosForExport() {
+  const out = {};
+  const photos = state.checklist.photos || {};
+  for (const id in photos) {
+    const clean = (photos[id] || [])
+      .filter(function(p) { return p && p.driveId; })
+      .map(function(p) { return { driveId: p.driveId, name: p.name, mimeType: p.mimeType }; });
+    if (clean.length) out[id] = clean;
+  }
+  return out;
+}
+
+function revokePhotoCaches() {
+  Object.keys(photoBlobCache).forEach(function(k) { try { URL.revokeObjectURL(photoBlobCache[k]); } catch (e) {} delete photoBlobCache[k]; });
+  Object.keys(pdfPhotoCache).forEach(function(k) { delete pdfPhotoCache[k]; });
+}
+
+// Descarrega, uma a uma, as miniaturas das fotografias referenciadas (memória!) e
+// repinta a linha de cada item à medida que chegam.
+let _hydratingPhotos = false;
+async function hydrateChecklistPhotos() {
+  if (_hydratingPhotos || !driveState.connected) return;
+  _hydratingPhotos = true;
+  try {
+    const photos = state.checklist.photos;
+    for (const itemId of Object.keys(photos)) {
+      let changed = false;
+      for (const ref of (photos[itemId] || [])) {
+        if (ref && ref.driveId && !photoBlobCache[ref.driveId]) {
+          try { await fetchPhotoBlob(ref.driveId); changed = true; }
+          catch (e) { console.warn('Falha ao carregar foto', ref.driveId, e); }
+        }
+      }
+      if (changed) renderPhotoRow(itemId);
+    }
+  } finally { _hydratingPhotos = false; }
 }
 
 // ════════════════════════════════════════
@@ -704,14 +1143,22 @@ function _storage() {
   catch(e) { return sessionStorage; }
 }
 
-function serializeSession() {
-  return JSON.stringify({ state: state, activeFlow: activeFlow, ts: Date.now() }, null, 2);
+function sessionPayloadObject() {
+  // Só referências do Drive para as fotografias (nunca base64, nunca envios incompletos)
+  const checklist = Object.assign({}, state.checklist, { photos: getCleanPhotosForExport() });
+  return { state: Object.assign({}, state, { checklist: checklist }), activeFlow: activeFlow, ts: Date.now() };
 }
+
+function serializeSession() { return JSON.stringify(sessionPayloadObject(), null, 2); }
 
 function markDirty() { isDirty = true; }
 
 function saveState() {
-  try { _storage().setItem(SAVE_KEY, serializeSession()); } catch(e) {}
+  try {
+    const obj = sessionPayloadObject();
+    _storage().setItem(SAVE_KEY, JSON.stringify(obj, null, 2));
+    lastLocalTs = obj.ts;
+  } catch(e) {}
   markDirty();
 }
 
@@ -727,6 +1174,20 @@ function clearSavedState() {
   try { _storage().removeItem(SAVE_KEY); } catch(e) {}
 }
 
+// Sincroniza já (e não só no próximo ciclo de 15 s) — usado depois de enviar/apagar
+// uma fotografia, para a referência não ficar só neste telemóvel.
+let _syncTimer = null;
+function scheduleDriveSync(ms) {
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(async function() {
+    if (!isDirty || isSavingToDrive || !driveState.connected) return;
+    isSavingToDrive = true;
+    const ok = await saveJsonToDrive();
+    isSavingToDrive = false;
+    if (ok) isDirty = false;
+  }, ms || 1000);
+}
+
 async function findJsonFileId() {
   if (driveState.jsonFileId) return driveState.jsonFileId;
   const q = "name='" + DRIVE_JSON_NAME + "' and '" + driveState.parentFolderId + "' in parents and trashed=false";
@@ -740,6 +1201,9 @@ async function findJsonFileId() {
 async function saveJsonToDrive() {
   if (!driveState.connected) return false;
   if (!state.header.idImovel && !state.header.morada) return false;
+  // Só sincroniza a visita ligada ao ID/morada confirmados ao abrir a visita: enquanto o
+  // ecrã inicial está a ser editado, o nome da pasta ainda não é o definitivo (evita pastas "Rua das Fl…").
+  if (!state.sessionKey || buildProjectFolderName() !== state.sessionKey) return false;
   try {
     await ensureProjectFolders();
     const fileId = await findJsonFileId();
@@ -798,11 +1262,21 @@ async function loadSessionFromDrive(parentFolderId) {
 function exportSessionFile() {
   const payload = serializeSession();
   const blob = new Blob([payload], { type: 'application/json' });
+  const id = String(state.header.idImovel || 'visita-tecnica').replace(/[^\w-]+/g, '_');
+  const fname = 'sessao_' + id + '_' + new Date().toISOString().slice(0,10) + '.json';
+  if (IS_NATIVE) {
+    // WebView não descarrega blobs: grava em cache e abre a partilha do Android
+    saveBlobLocallyNative(blob, fname).then(function() {
+      showToast('Sessão guardada como ficheiro JSON.');
+    }).catch(function(e) {
+      if (!isNativeShareCancel(e)) showToast('Não foi possível guardar o ficheiro.');
+    });
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const id = state.header.idImovel || 'visita-tecnica';
   a.href = url;
-  a.download = 'sessao_' + id + '_' + new Date().toISOString().slice(0,10) + '.json';
+  a.download = fname;
   a.click();
   URL.revokeObjectURL(url);
   showToast('Sessão guardada como ficheiro JSON.');
@@ -816,10 +1290,12 @@ function importSessionFile(evt) {
     try {
       const data = JSON.parse(e.target.result);
       if (!data.state) throw new Error('Formato inválido');
-      state = Object.assign({ header:{}, checklist:{answers:{},obs:{}}, premissas:{answers:{}} }, data.state);
+      state = normalizeState(data.state);
+      if (!state.sessionKey) state.sessionKey = buildProjectFolderName();
       activeFlow = data.activeFlow || null;
+      driveState.sessionLoadedFor = null;
       fillHeaderInputs();
-      saveState();
+      saveState();   // lastLocalTs = agora → esta cópia prevalece sobre o Drive
       showToast('Sessão retomada com sucesso!');
       if (activeFlow === 'checklist') goToChecklist(); else if (activeFlow === 'premissas') goToPremissas();
     } catch(err) {
@@ -829,7 +1305,6 @@ function importSessionFile(evt) {
   reader.readAsText(file);
   evt.target.value = '';
 }
-
 
 // ════════════════════════════════════════
 //  UTIL
@@ -921,23 +1396,103 @@ function showScreen(id) {
   window.scrollTo(0,0);
 }
 
-function goToChecklist() {
-  readHeaderInputs();
-  activeFlow = 'checklist';
-  updateAppHeaders();
-  renderChecklist();
-  showScreen('checklist-screen');
-  saveState();
+// ── Indicador de espera (só aparece se a operação demorar > 250 ms) ──
+let _loadingTimer = null;
+function showLoading(msg) {
+  const el = document.getElementById('loading-overlay');
+  document.getElementById('loading-text').textContent = msg || 'A carregar…';
+  clearTimeout(_loadingTimer);
+  _loadingTimer = setTimeout(function() { el.classList.add('open'); }, 250);
+}
+function hideLoading() {
+  clearTimeout(_loadingTimer);
+  document.getElementById('loading-overlay').classList.remove('open');
 }
 
-function goToPremissas() {
-  readHeaderInputs();
-  activeFlow = 'premissas';
-  updateAppHeaders();
-  renderPremissas();
-  showScreen('premissas-screen');
-  saveState();
+function resetDriveFolderCache() {
+  driveState.parentFolderId = null;
+  driveState.photosFolderId = null;
+  driveState.sectionFolderIds = {};
+  driveState.projectFolderName = null;
+  driveState.jsonFileId = null;
+  driveState.sessionLoadedFor = null;
 }
+
+// Começar uma visita nova: apaga respostas/fotos do ecrã (o Drive da visita anterior não é tocado)
+function resetVisitData() {
+  revokePhotoCaches();
+  state.checklist = { answers:{}, obs:{}, photos:{} };
+  state.premissas = { answers:{} };
+  state.sessionKey = null;
+  resetDriveFolderCache();
+}
+
+function shouldAdoptDriveData(d) {
+  if (!sessionHasData()) return true;               // nada local a perder
+  return (d.ts || 0) > (lastLocalTs || 0);           // só se o Drive for mais recente que a cópia local
+}
+
+function adoptSessionData(d) {
+  const incoming = normalizeState(d.state);
+  const h = state.header, ih = incoming.header || {};
+  Object.keys(ih).forEach(function(k) { if (!h[k] && ih[k]) h[k] = ih[k]; });   // o que está escrito no ecrã prevalece
+  incoming.header = h;
+  incoming.sessionKey = state.sessionKey;
+  state = incoming;
+  fillHeaderInputs();
+}
+
+// Liga as respostas ao imóvel indicado no ecrã inicial: nunca mistura dois imóveis
+// e, com o Drive ligado, retoma a visita já iniciada (na PWA ou noutro telemóvel).
+let _noDriveToastShown = false;
+async function bindSessionToHeader() {
+  const key = buildProjectFolderName();                 // null se ID e morada estão vazios
+  if (key && state.sessionKey && state.sessionKey !== key && sessionHasData()) {
+    const novaVisita = confirm('O ID ou a morada mudaram:\n• Antes: ' + state.sessionKey + '\n• Agora: ' + key +
+      '\n\nOK = começar uma visita NOVA (as respostas e fotografias atuais deixam de aparecer aqui; ficam guardadas no Drive da visita anterior).' +
+      '\nCancelar = manter as respostas atuais e só atualizar o ID/morada.');
+    if (novaVisita) resetVisitData();
+  }
+  if (key) state.sessionKey = key;
+  showLoading('A preparar a visita…');
+  try {
+    await nativeSilentConnect(6000);
+    if (driveState.connected && key && driveState.sessionLoadedFor !== key) {
+      await ensureProjectFolders();
+      const driveData = await loadSessionFromDrive(driveState.parentFolderId);
+      driveState.sessionLoadedFor = key;
+      if (driveData && driveData.state && shouldAdoptDriveData(driveData)) {
+        adoptSessionData(driveData);
+        showToast('Sessão carregada do Google Drive.');
+      }
+    } else if (key && !driveState.connected && !_noDriveToastShown) {
+      _noDriveToastShown = true;
+      showToast('Drive desligado — liga o Drive para guardar a sessão e as fotografias na nuvem.');
+    }
+  } catch (e) {
+    console.warn('Sincronização com o Drive ao abrir a visita:', e);
+    showToast('Não foi possível ler o Drive agora — a continuar com os dados locais.');
+  } finally { hideLoading(); }
+}
+
+let _enteringFlow = false;
+async function enterFlow(flow) {
+  if (_enteringFlow) return;          // evita duplo toque enquanto o Drive responde
+  _enteringFlow = true;
+  try {
+    readHeaderInputs();
+    await bindSessionToHeader();
+    activeFlow = flow;
+    updateAppHeaders();
+    if (flow === 'checklist') { renderChecklist(); showScreen('checklist-screen'); }
+    else { renderPremissas(); showScreen('premissas-screen'); }
+    saveState();
+    if (flow === 'checklist') hydrateChecklistPhotos();
+  } finally { _enteringFlow = false; }
+}
+
+function goToChecklist() { return enterFlow('checklist'); }
+function goToPremissas() { return enterFlow('premissas'); }
 
 function goHome() {
   activeFlow = null;
@@ -946,12 +1501,11 @@ function goHome() {
 }
 
 function clearAllData() {
-  if (!confirm('Limpar todos os dados desta sessão? Esta ação não pode ser desfeita.')) return;
-  state = { header:{idImovel:'',morada:'',cp:'',concelho:'',gama:'',tipologia:'',area:''}, checklist:{answers:{},obs:{}}, premissas:{answers:{}} };
+  if (!confirm('Limpar todos os dados desta sessão neste telemóvel?\n(O que já está no Google Drive não é apagado.)\nEsta ação não pode ser desfeita.')) return;
+  revokePhotoCaches();
+  state = newEmptyState();
   activeFlow = null;
-  driveState.parentFolderId = null;
-  driveState.projectFolderName = null;
-  driveState.jsonFileId = null;
+  resetDriveFolderCache();
   clearSavedState();
   fillHeaderInputs();
   showToast('Dados limpos.');
@@ -993,7 +1547,11 @@ function renderChecklistItemHtml(id, label) {
     <div class="item-q">${escapeHtml(label)}</div>
     <div class="item-options">${optsHtml}</div>
     <input type="text" class="item-free-input" id="clfree-${id}" placeholder="ou escreve a resposta (ex: 3,00m)" oninput="setChecklistFreeText('${id}', this.value)">
-    <div class="item-obs-toggle" id="clobstoggle-${id}" onclick="toggleChecklistObs('${id}')">💬 Observações</div>
+    <div class="item-actions">
+      <button type="button" class="item-act-btn" id="clobstoggle-${id}" onclick="toggleChecklistObs('${id}')">💬 Observações</button>
+      <button type="button" class="item-act-btn" id="clphotobtn-${id}" onclick="addPhoto('${id}')">📷 Foto</button>
+    </div>
+    <div class="photo-row" id="clphotorow-${id}"></div>
     <div class="item-obs-wrap" id="clobswrap-${id}"><textarea class="item-obs-area" id="clobs-${id}" placeholder="Observações…" oninput="setChecklistObs('${id}', this.value)"></textarea></div>
   </div>`;
 }
@@ -1036,10 +1594,17 @@ function toggleChecklistObs(id) {
   if (wrap) wrap.classList.toggle('open');
 }
 
+function updateObsButton(id) {
+  const t = document.getElementById('clobstoggle-' + id);
+  if (!t) return;
+  const has = !!state.checklist.obs[id];
+  t.classList.toggle('has', has);
+  t.textContent = has ? '💬 Observações ✓' : '💬 Observações';
+}
+
 function setChecklistObs(id, text) {
   state.checklist.obs[id] = text;
-  const t = document.getElementById('clobstoggle-' + id);
-  if (t) { t.classList.toggle('has-text', !!text); t.textContent = text ? '💬 Observações ✓' : '💬 Observações'; }
+  updateObsButton(id);
   saveState();
 }
 
@@ -1078,16 +1643,360 @@ function hydrateChecklistUI() {
     sec.items.forEach(function(_, idx) {
       const id = checklistItemId(sec.id, idx);
       refreshChecklistItemUI(id);
-      const obsVal = state.checklist.obs[id] || '';
       const area = document.getElementById('clobs-' + id);
-      if (area) area.value = obsVal;
-      const toggle = document.getElementById('clobstoggle-' + id);
-      if (toggle) { toggle.classList.toggle('has-text', !!obsVal); toggle.textContent = obsVal ? '💬 Observações ✓' : '💬 Observações'; }
+      if (area) area.value = state.checklist.obs[id] || '';
+      updateObsButton(id);
+      renderPhotoRow(id);
     });
   });
   updateChecklistProgress();
 }
 
+// ════════════════════════════════════════
+//  FOTOGRAFIAS — captura, envio para o Drive e miniaturas
+// ════════════════════════════════════════
+function addPhoto(itemId) {
+  currentPhotoItemId = itemId;
+  document.getElementById('photo-source-modal').style.display = 'flex';
+}
+
+(function setupPhotoSourceModal() {
+  const modal = document.getElementById('photo-source-modal');
+  const close = function() { modal.style.display = 'none'; };
+  document.getElementById('psm-camera').addEventListener('click', function() {
+    close();
+    if (IS_NATIVE) { takeNativePhoto(); return; }
+    document.getElementById('file-input-camera').click();
+  });
+  document.getElementById('psm-gallery').addEventListener('click', function() {
+    close();
+    document.getElementById('file-input-gallery').click();
+  });
+  document.getElementById('psm-cancel').addEventListener('click', close);
+  modal.addEventListener('click', function(e) { if (e.target === modal) close(); });
+})();
+
+async function handlePhotos(event) {
+  const files = Array.from(event.target.files || []);
+  event.target.value = '';
+  const id = currentPhotoItemId;
+  if (!id || !files.length) return;
+  await processPhotoFiles(files, id);
+}
+
+let _tempPhotoCounter = 0;
+async function processPhotoFiles(files, id) {
+  try {
+    if (!state.checklist.photos[id]) state.checklist.photos[id] = [];
+    for (const file of files) {
+      if (!/^image\//.test(file.type || 'image/jpeg')) continue;
+      const tempKey = 'pending_' + Date.now() + '_' + (++_tempPhotoCounter);
+
+      // Miniatura gerada JÁ AQUI, antes do envio: guardar fotos em resolução de
+      // câmara em memória é o que mais facilmente esgota o WebView.
+      const rawPreviewUrl = URL.createObjectURL(file);
+      try {
+        photoBlobCache[tempKey] = await downscaleImageToObjectUrl(rawPreviewUrl, PHOTO_THUMB_MAX_DIM);
+        URL.revokeObjectURL(rawPreviewUrl);
+      } catch (e) {
+        photoBlobCache[tempKey] = rawPreviewUrl;
+      }
+
+      const entry = { driveId: null, tempKey: tempKey, name: file.name, mimeType: file.type, status: 'uploading' };
+      state.checklist.photos[id].push(entry);
+      renderPhotoRow(id);
+      await uploadEntry(entry, file, id);
+    }
+  } catch (err) {
+    console.error('Erro inesperado ao processar fotografias:', err);
+    showToast('Ocorreu um problema ao processar a fotografia — tenta novamente.');
+  }
+}
+
+// Envia uma fotografia (já com miniatura) para a pasta da secção no Drive.
+// Se falhar (sem rede, Drive desligado), fica com "!" e basta tocar nela para reenviar.
+async function uploadEntry(entry, file, id) {
+  if (!driveState.connected) {
+    entry.status = 'failed';
+    entry._file = file;
+    renderPhotoRow(id);
+    showToast('Drive desligado — liga o Drive e toca na fotografia com "!" para a enviar.');
+    return;
+  }
+  entry.status = 'uploading';
+  renderPhotoRow(id);
+  try {
+    const uploaded = await uploadPhotoToDrive(file, id);
+    const oldKey = entry.tempKey;
+    if (oldKey && photoBlobCache[oldKey]) { photoBlobCache[uploaded.driveId] = photoBlobCache[oldKey]; delete photoBlobCache[oldKey]; }
+    entry.driveId = uploaded.driveId;
+    entry.name = uploaded.name;
+    entry.mimeType = uploaded.mimeType;
+    entry.status = 'done';
+    delete entry.tempKey;
+    delete entry._file;
+    saveState();    // grava a nova referência (só driveId) na cópia local
+    scheduleDriveSync(1000);   // e no Drive (dados.json) quase de imediato
+  } catch (err) {
+    console.warn('Falha ao enviar foto:', err);
+    entry.status = 'failed';
+    entry._file = file;
+    showToast('Falha ao enviar fotografia — toca nela para reenviar.');
+  }
+  renderPhotoRow(id);
+}
+
+function updatePhotoButton(id) {
+  const b = document.getElementById('clphotobtn-' + id);
+  if (!b) return;
+  const n = (state.checklist.photos[id] || []).length;
+  b.classList.toggle('has', n > 0);
+  b.textContent = n ? '📷 Fotos (' + n + ')' : '📷 Foto';
+}
+
+function renderPhotoRow(id) {
+  const row = document.getElementById('clphotorow-' + id);
+  if (!row) return;
+  row.innerHTML = '';
+  (state.checklist.photos[id] || []).forEach(function(entry, idx) {
+    const key = entry.driveId || entry.tempKey;
+    const src = photoBlobCache[key] || '';
+    const wrap = document.createElement('div');
+    wrap.className = 'photo-thumb-wrap' +
+      (entry.status === 'uploading' ? ' is-uploading' : '') +
+      (entry.status === 'failed' ? ' is-failed' : '');
+
+    let thumb;
+    if (src) {
+      thumb = document.createElement('img');
+      thumb.className = 'photo-thumb';
+      thumb.src = src;
+      thumb.alt = '';
+    } else {
+      thumb = document.createElement('div');
+      thumb.className = 'photo-thumb ph';
+      thumb.textContent = '📷';
+    }
+    thumb.onclick = function() {
+      if (entry.status === 'failed' && entry._file) { uploadEntry(entry, entry._file, id); return; }
+      if (src || entry.driveId) openPhotoEntry(entry, src);
+    };
+    wrap.appendChild(thumb);
+
+    const spinner = document.createElement('div');
+    spinner.className = 'photo-spinner';
+    spinner.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke-opacity="0.3"/><path d="M21 12a9 9 0 0 0-9-9"/></svg>';
+    wrap.appendChild(spinner);
+
+    const failBadge = document.createElement('div');
+    failBadge.className = 'photo-fail-badge';
+    failBadge.textContent = '!';
+    wrap.appendChild(failBadge);
+
+    // Botão × para apagar — no Android (sem hover) aparece ao tocar na miniatura
+    const delBtn = document.createElement('div');
+    delBtn.className = 'photo-delete-btn';
+    delBtn.textContent = '×';
+    delBtn.title = 'Apagar fotografia';
+    delBtn.onclick = function(e) { e.stopPropagation(); removePhoto(id, idx); };
+    wrap.appendChild(delBtn);
+
+    thumb.addEventListener('touchend', function(e) {
+      const isVisible = wrap.classList.contains('show-delete');
+      document.querySelectorAll('.photo-thumb-wrap.show-delete').forEach(function(w) { w.classList.remove('show-delete'); });
+      if (!isVisible && entry.status !== 'failed') {
+        e.preventDefault();               // não abrir a foto se ainda estava a mostrar o ×
+        wrap.classList.add('show-delete');
+      }
+    }, { passive: false });
+
+    row.appendChild(wrap);
+  });
+  updatePhotoButton(id);
+}
+
+let _viewerToken = 0;
+let _viewerObjectUrl = null;
+function openPhotoEntry(entry, thumbSrc) {
+  const img = document.getElementById('photo-modal-img');
+  const myToken = ++_viewerToken;
+  if (_viewerObjectUrl) { URL.revokeObjectURL(_viewerObjectUrl); _viewerObjectUrl = null; }
+  img.src = thumbSrc || '';
+  document.getElementById('photo-modal').classList.add('open');
+  // mostra logo a miniatura e troca pela fotografia completa quando chegar do Drive
+  if (entry.driveId && driveState.connected) {
+    fetchPhotoFullBlob(entry.driveId).then(function(blob) {
+      if (myToken !== _viewerToken) return;          // entretanto fechou ou abriu outra
+      _viewerObjectUrl = URL.createObjectURL(blob);
+      img.src = _viewerObjectUrl;
+    }).catch(function(e) { console.warn('Fotografia completa indisponível:', e); });
+  }
+}
+function closePhoto() {
+  _viewerToken++;
+  document.getElementById('photo-modal').classList.remove('open');
+  document.getElementById('photo-modal-img').removeAttribute('src');
+  if (_viewerObjectUrl) { URL.revokeObjectURL(_viewerObjectUrl); _viewerObjectUrl = null; }
+}
+
+async function removePhoto(itemId, idx) {
+  const photos = state.checklist.photos[itemId];
+  if (!photos || !photos[idx]) return;
+  const entry = photos[idx];
+  if (entry.status === 'uploading') return;        // não apagar enquanto ainda está a enviar
+
+  const driveId = entry.driveId;
+  const key = driveId || entry.tempKey;
+  if (key && photoBlobCache[key]) { URL.revokeObjectURL(photoBlobCache[key]); delete photoBlobCache[key]; }
+  if (driveId) delete pdfPhotoCache[driveId];
+  photos.splice(idx, 1);
+  if (!photos.length) delete state.checklist.photos[itemId];
+  saveState();
+  scheduleDriveSync(1000);
+  renderPhotoRow(itemId);
+
+  // Apagar no Drive em segundo plano — sem bloquear o ecrã
+  if (driveId && driveState.connected) {
+    driveApiFetch(DRIVE_API_FILES + '/' + driveId, { method: 'DELETE' }).catch(function(e) {
+      console.warn('Não foi possível apagar a foto no Drive:', e);
+    });
+  }
+}
+
+// ════════════════════════════════════════
+//  APK — câmara nativa, recuperação após o Android fechar a app, botão "voltar"
+// ════════════════════════════════════════
+const PENDING_PHOTO_KEY = 'visita_tecnica_pending_photo_v1';
+let _appReadyResolve = function() {};
+const appReady = new Promise(function(resolve) { _appReadyResolve = resolve; });
+
+// Antes de abrir a câmara guarda-se para que item é a foto: se o Android
+// fechar a app enquanto a câmara está aberta, é isto que permite colocá-la
+// no sítio certo quando a app voltar (ver onNativeRestoredResult).
+function setPendingPhoto(itemId) {
+  try { _storage().setItem(PENDING_PHOTO_KEY, JSON.stringify({ itemId: itemId, ts: Date.now() })); } catch (e) {}
+}
+function takePendingPhoto() {
+  let p = null;
+  try {
+    p = JSON.parse(_storage().getItem(PENDING_PHOTO_KEY) || 'null');
+    _storage().removeItem(PENDING_PHOTO_KEY);
+  } catch (e) {}
+  if (p && p.ts && Date.now() - p.ts > 3600 * 1000) return null; // marcador antigo = lixo
+  return p;
+}
+
+async function takeNativePhoto() {
+  const api = await nativeReady;
+  if (!api) { showToast('Câmara nativa indisponível.'); return; }
+  const itemId = currentPhotoItemId;
+  setPendingPhoto(itemId);
+  saveState();     // o Android pode fechar a app enquanto a câmara está aberta: grava já o estado
+  let photo;
+  try {
+    photo = await api.Camera.getPhoto({
+      resultType: api.CameraResultType.Uri,
+      source: api.CameraSource.Camera,
+      quality: 90,
+      saveToGallery: false,
+      correctOrientation: true,
+    });
+  } catch (err) {
+    takePendingPhoto(); // limpa o marcador
+    const msg = String((err && (err.message || err)) || '');
+    if (!/cancel/i.test(msg)) {
+      console.warn('Camera.getPhoto falhou:', err);
+      showToast('Não foi possível tirar a fotografia.');
+    }
+    return;
+  }
+  takePendingPhoto();
+  try {
+    await ingestNativePhoto(photo, itemId);
+  } catch (err) {
+    console.error('Erro ao processar a fotografia nativa:', err);
+    showToast('Ocorreu um problema ao processar a fotografia — tenta novamente.');
+  }
+}
+
+// Lê o ficheiro que a câmara nativa gravou e entrega-o ao mesmo circuito das
+// fotografias da galeria (miniatura → Drive → estado).
+async function ingestNativePhoto(photo, itemId) {
+  const src = photo && (photo.webPath || (photo.path && window.Capacitor.convertFileSrc(photo.path)));
+  if (!src) throw new Error('A câmara não devolveu o caminho da fotografia.');
+  const resp = await fetch(src);
+  if (!resp.ok) throw new Error('Não foi possível ler a fotografia (' + resp.status + ').');
+  const blob = await resp.blob();
+  const file = new File([blob], 'IMG_' + Date.now() + '.jpg', { type: blob.type || 'image/jpeg' });
+  await processPhotoFiles([file], itemId);
+}
+
+// O Android fechou a app enquanto a câmara estava aberta: o Capacitor guarda
+// o resultado e entrega-o aqui no arranque seguinte.
+function onNativeRestoredResult(ev) {
+  try {
+    if (!ev || ev.pluginId !== 'Camera') return;
+    const pending = takePendingPhoto();
+    const data = ev.data || {};
+    if (!ev.success || !(data.webPath || data.path)) return; // cancelada ou falhada
+    if (!pending || !pending.itemId) {
+      showToast('Fotografia recuperada, mas sem destino — tira-a novamente.');
+      return;
+    }
+    currentPhotoItemId = pending.itemId;
+    appReady.then(function() {
+      return ingestNativePhoto(data, pending.itemId);
+    }).then(function() {
+      showToast('Fotografia recuperada depois de o Android fechar a app.');
+    }).catch(function(err) {
+      console.error('Falha ao recuperar a fotografia:', err);
+      showToast('Não foi possível recuperar a fotografia — tira-a novamente.');
+    });
+  } catch (e) { console.error(e); }
+}
+
+// Botão "voltar" do Android: fecha o que estiver aberto; dentro da visita/premissas
+// volta ao ecrã inicial (como o botão "Voltar"); no ecrã inicial exige um segundo
+// toque em 2 s para sair (evita fechar a app sem querer em obra).
+let _lastBackPress = 0;
+function onNativeBackButton() {
+  const viewer = document.getElementById('photo-modal');
+  if (viewer && viewer.classList.contains('open')) { closePhoto(); return; }
+  const psm = document.getElementById('photo-source-modal');
+  if (psm && psm.style.display === 'flex') { psm.style.display = 'none'; return; }
+  if (activeFlow) { goHome(); return; }
+  const now = Date.now();
+  if (now - _lastBackPress < 2000) {
+    if (nativeAPI) nativeAPI.App.exitApp();
+    return;
+  }
+  _lastBackPress = now;
+  showToast('Prime novamente para sair.');
+}
+
+// Guardar um ficheiro (PDF/JSON) quando não há Drive: o WebView não descarrega
+// blobs, por isso grava-se em cache e abre-se a partilha do Android
+// ("Guardar em Ficheiros", WhatsApp, e-mail, ...).
+async function saveBlobLocallyNative(blob, filename) {
+  const api = await nativeReady;
+  if (!api) throw new Error('Plugins nativos indisponíveis.');
+  const safeName = String(filename).replace(/[^\w.\-]+/g, '_');
+  const dataUrl = await blobToDataUrl(blob);
+  const base64 = String(dataUrl).split(',')[1] || '';
+  const written = await api.Filesystem.writeFile({ path: safeName, data: base64, directory: api.Directory.Cache });
+  await api.Share.share({ title: safeName, files: [written.uri], dialogTitle: 'Guardar ou partilhar' });
+}
+function isNativeShareCancel(err) {
+  return /cancel/i.test(String((err && (err.message || err)) || ''));
+}
+
+function setupNativeBridge(api) {
+  try { api.App.addListener('appRestoredResult', onNativeRestoredResult).catch(function() {}); } catch (e) { console.warn(e); }
+  try { api.App.addListener('backButton', onNativeBackButton).catch(function() {}); } catch (e) { console.warn(e); }
+  // as fotografias originais da câmara ficam na pasta da app — apagar as com mais de 24 h
+  try { api.DriveAuth.cleanupPhotos({ olderThanHours: 24 }).catch(function() {}); } catch (e) {}
+}
+nativeReady.then(function(api) { if (api) setupNativeBridge(api); });
 
 // ════════════════════════════════════════
 //  PDF — primitivas partilhadas (reaproveitadas da Vistoria Final de Obra)
@@ -1166,9 +2075,15 @@ async function pdfFinish(ctx, filename) {
       showToast('PDF guardado no Google Drive.');
       return;
     } catch (err) {
-      console.warn('Falha ao enviar PDF para o Drive, a descarregar localmente:', err);
-      showToast('Não foi possível guardar no Drive — PDF descarregado localmente.');
+      console.warn('Falha ao enviar PDF para o Drive, a guardar localmente:', err);
+      showToast('Não foi possível guardar no Drive — a guardar o PDF localmente.');
     }
+  }
+  if (IS_NATIVE) {
+    // WebView não descarrega blobs: grava em cache e abre a partilha do Android
+    try { await saveBlobLocallyNative(blob, filename); }
+    catch (e) { if (!isNativeShareCancel(e)) showToast('Não foi possível guardar o PDF: ' + (e.message || e)); }
+    return;
   }
   ctx.doc.save(filename);
 }
@@ -1267,7 +2182,120 @@ function pdfBadgeInfo(val) {
   return { label:'—', bg:[240,242,245], fg:[170,175,182] };
 }
 
-function drawChecklistItemPdf(ctx, label, val, obs) {
+// ── Fotografias no PDF ──
+// Converte qualquer formato de imagem (jpeg/png/webp) para um JPEG normalizado
+// e devolve também a proporção largura/altura — necessária para desenhar cada
+// fotografia no PDF sem a distorcer.
+function normalizeImageForPdf(dataUrl, maxDim) {
+  return new Promise(function(resolve) {
+    if (!dataUrl) { resolve(null); return; }
+    let settled = false;
+    const timeoutId = setTimeout(function() {
+      if (settled) return;
+      settled = true;
+      resolve(null); // não deixar uma foto pendurada bloquear a exportação inteira
+    }, 8000);
+    const img = new Image();
+    img.onload = function() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      try {
+        const nw = img.naturalWidth || img.width, nh = img.naturalHeight || img.height;
+        if (!nw || !nh) { resolve(null); return; }
+        const scale = Math.min(1, maxDim / Math.max(nw, nh));
+        const w = Math.max(1, Math.round(nw * scale)), h = Math.max(1, Math.round(nh * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const c2d = canvas.getContext('2d');
+        c2d.fillStyle = '#fff'; c2d.fillRect(0, 0, w, h);
+        c2d.drawImage(img, 0, 0, w, h);
+        resolve({ src: canvas.toDataURL('image/jpeg', 0.82), ratio: nw / nh });
+      } catch (e) { resolve(null); }
+    };
+    img.onerror = function() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      resolve(null);
+    };
+    img.src = dataUrl;
+  });
+}
+
+// Distribui fotografias em "linhas" da largura disponível, todas com a mesma
+// altura-alvo (tal como o flex-wrap do ecrã). Cada foto mantém a proporção:
+// se a largura for limitada por maxW, a altura encolhe em vez de deformar.
+// A altura de cada linha é a da sua foto mais alta (linhas só de panorâmicas ficam baixas).
+function layoutPhotoRows(photos, availW, targetH, maxW, gap) {
+  const rows = [];
+  let row = [], rowW = 0;
+  const flush = function() {
+    if (row.length) rows.push({ items: row, h: Math.max.apply(null, row.map(function(p) { return p.h; })) });
+    row = []; rowW = 0;
+  };
+  photos.forEach(function(p) {
+    const ratio = p.ratio || 1.33;
+    const w = Math.min(maxW, targetH * ratio);
+    const h = w / ratio;
+    if (row.length && rowW + gap + w > availW) flush();
+    if (row.length) rowW += gap;
+    row.push({ src: p.src, w: w, h: h });
+    rowW += w;
+  });
+  flush();
+  return { rows: rows, gap: gap };
+}
+
+// Desenha as linhas de fotografias, passando para a página seguinte quando uma
+// linha não cabe (um item com muitas fotos nunca sai da folha).
+function drawPhotoRowsPaginated(ctx, layout) {
+  layout.rows.forEach(function(row, ri) {
+    if (ri > 0) pdfEnsureSpace(ctx, row.h);              // a 1.ª linha já foi garantida pelo chamador
+    let curX = ctx.marginL;
+    row.items.forEach(function(ph) {
+      try { ctx.doc.addImage(ph.src, 'JPEG', curX, ctx.y + (row.h - ph.h) / 2, ph.w, ph.h); } catch (e) { /* foto corrompida: não interrompe o PDF */ }
+      curX += ph.w + layout.gap;
+    });
+    ctx.y += row.h + layout.gap;
+  });
+  ctx.y -= layout.gap;
+}
+
+// Prepara (uma a uma, por causa da memória) as fotografias para o PDF:
+// descarrega do Drive, reduz para ~1100 px e guarda o resultado em cache.
+async function preparePdfPhotos(onProgress) {
+  const entries = [];
+  Object.keys(state.checklist.photos).forEach(function(itemId) {
+    (state.checklist.photos[itemId] || []).forEach(function(e) { if (e && (e.driveId || e.tempKey)) entries.push(e); });
+  });
+  const map = {};
+  let done = 0, failed = 0;
+  for (const entry of entries) {
+    const key = entry.driveId || entry.tempKey;
+    try {
+      if (entry.driveId && pdfPhotoCache[entry.driveId]) {
+        map[key] = pdfPhotoCache[entry.driveId];
+      } else {
+        const dataUrl = await resolvePhotoDataUrl(entry);
+        if (dataUrl) {
+          const norm = await normalizeImageForPdf(dataUrl, 1100);
+          if (norm) { map[key] = norm; if (entry.driveId) pdfPhotoCache[entry.driveId] = norm; }
+        }
+      }
+    } catch (e) { console.warn('Foto não pôde ser incluída no PDF:', e); }
+    if (!map[key]) failed++;
+    done++;
+    if (onProgress) onProgress(done, entries.length);
+  }
+  return { map: map, failed: failed, total: entries.length };
+}
+
+function photosForItem(itemId, photoMap) {
+  return (state.checklist.photos[itemId] || []).map(function(p) { return photoMap[p.driveId || p.tempKey]; }).filter(Boolean);
+}
+
+function drawChecklistItemPdf(ctx, label, val, obs, photos) {
   const doc = ctx.doc;
   const isCanon = OPT_KEYS.indexOf(val) !== -1;
   const isFree = !!val && !isCanon;
@@ -1288,10 +2316,12 @@ function drawChecklistItemPdf(ctx, label, val, obs) {
     obsLines = doc.splitTextToSize('Obs: ' + obs, ctx.contentW - 4);
     obsLh = pdfLineHeight(doc);
   }
+  const photoLayout = (photos && photos.length) ? layoutPhotoRows(photos, ctx.contentW, 34, 44, 3) : null;
   const qBlockH = Math.max(qLines.length*qLh, 6);
   const freeBlockH = isFree ? freeLines.length*freeLh + 2 : 0;
   const obsBlockH = obs ? obsLines.length*obsLh + 2 : 0;
-  const blockH = qBlockH + freeBlockH + obsBlockH + 5;
+  const firstPhotoH = photoLayout ? photoLayout.rows[0].h + 2 : 0;       // garante pelo menos a 1.ª linha de fotos na mesma página
+  const blockH = qBlockH + freeBlockH + obsBlockH + firstPhotoH + 5;
   pdfEnsureSpace(ctx, blockH);
 
   const startY = ctx.y;
@@ -1320,6 +2350,10 @@ function drawChecklistItemPdf(ctx, label, val, obs) {
     doc.setFont('helvetica','italic'); doc.setFontSize(8.3); doc.setTextColor(PDF_GREY[0],PDF_GREY[1],PDF_GREY[2]);
     doc.text(obsLines, ctx.marginL, ctx.y + obsLh*0.75);
     ctx.y += obsLines.length*obsLh;
+  }
+  if (photoLayout) {
+    ctx.y += 2;
+    drawPhotoRowsPaginated(ctx, photoLayout);
   }
   ctx.y += 5;
   doc.setDrawColor(232,232,232);
@@ -1355,6 +2389,10 @@ async function exportChecklistPDF() {
   const orig = btn.textContent;
   btn.disabled = true; btn.textContent = 'A gerar…';
   try {
+    const prep = await preparePdfPhotos(function(done, total) { btn.textContent = 'Fotos ' + done + '/' + total + '…'; });
+    const photoMap = prep.map;
+    if (prep.failed && !confirm(prep.failed + ' de ' + prep.total + ' fotografias não puderam ser carregadas (sem ligação ao Drive?).\n\nOK = gerar o PDF sem essas fotografias.\nCancelar = não gerar agora.')) return;
+    btn.textContent = 'A gerar…';
     const ctx = pdfNewContext('RELATÓRIO — VISITA TÉCNICA', state.header.idImovel || '');
     if (!ctx) return;
     drawHeroBand(ctx, 'Relatório de Visita Técnica');
@@ -1375,7 +2413,7 @@ async function exportChecklistPDF() {
       drawSectionTitlePdf(ctx, si + 1, sec.name);
       sec.items.forEach(function(label, idx) {
         const id = checklistItemId(sec.id, idx);
-        drawChecklistItemPdf(ctx, label, state.checklist.answers[id] || '', state.checklist.obs[id] || '');
+        drawChecklistItemPdf(ctx, label, state.checklist.answers[id] || '', state.checklist.obs[id] || '', photosForItem(id, photoMap));
       });
       ctx.y += 3;
     });
@@ -1783,18 +2821,56 @@ function hydratePremissasUI() {
   updatePremissasProgress();
 }
 
-// ════════════════════════════════════════
-//  BOOTSTRAP
-// ════════════════════════════════════════
 (function cleanupOldServiceWorker() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(function(regs) {
       regs.forEach(function(r) { r.unregister(); });
     }).catch(function() {});
   }
+  if (window.caches && caches.keys) {
+    caches.keys().then(function(keys) { keys.forEach(function(k) { caches.delete(k); }); }).catch(function() {});
+  }
 })();
 
-(function bootstrap() {
+// ── Teclado no Android (MIUI e WebView): leva o campo focado para a zona visível ──
+(function() {
+  function nudge(el) {
+    if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA')) return;
+    var rect = el.getBoundingClientRect();
+    var vvHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    var mid = vvHeight / 2;
+    var elMid = rect.top + rect.height / 2;
+    if (elMid > mid) {
+      var scrollAmt = elMid - mid + 20;
+      window.scrollBy({ top: scrollAmt, behavior: 'smooth' });
+    }
+  }
+  document.addEventListener('focusin', function(e) {
+    var el = e.target;
+    setTimeout(function() { nudge(el); }, 350);
+    setTimeout(function() { nudge(el); }, 750);
+  });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function() {
+      setTimeout(function() { nudge(document.activeElement); }, 100);
+    });
+  } else {
+    window.addEventListener('resize', function() {
+      setTimeout(function() { nudge(document.activeElement); }, 150);
+    });
+  }
+})();
+
+document.getElementById('photo-modal').addEventListener('click', function(e) {
+  if (e.target === this) closePhoto();
+});
+
+// ════════════════════════════════════════
+//  BOOTSTRAP
+// ════════════════════════════════════════
+(async function bootstrap() {
+  const modeLine = document.getElementById('app-mode-line');
+  if (modeLine) modeLine.textContent = 'Visita Técnica · ' + (IS_NATIVE ? 'APK' : 'PWA');
   bindHeaderInputListeners();
   renderHomeChoices();
 
@@ -1802,9 +2878,9 @@ function hydratePremissasUI() {
 
   const saved = loadState();
   if (saved && saved.state) {
-    state = Object.assign({ header:{}, checklist:{answers:{},obs:{}}, premissas:{answers:{}} }, saved.state);
-    if (!state.checklist) state.checklist = { answers:{}, obs:{} };
-    if (!state.premissas) state.premissas = { answers:{} };
+    state = normalizeState(saved.state);
+    if (!state.sessionKey) state.sessionKey = buildProjectFolderName();   // sessão gravada por uma versão anterior
+    lastLocalTs = saved.ts || 0;
     activeFlow = saved.activeFlow || null;
     fillHeaderInputs();
     if (activeFlow === 'checklist') {
@@ -1818,6 +2894,11 @@ function hydratePremissasUI() {
   }
 
   setDriveStatus(driveState.status);
+  if (driveState.connected) onDriveConnected();     // regresso do login Google (PWA): carrega as miniaturas
+
+  // APK: liga ao Drive em silêncio (sem ecrãs, se já autorizaste antes) — o indicador fica logo ligado
+  if (IS_NATIVE) await nativeSilentConnect(8000);
+  _appReadyResolve();
 })();
 
 </script>

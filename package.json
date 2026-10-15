@@ -1,0 +1,26 @@
+{
+  "name": "visita-tecnica-apk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "APK (Capacitor) da PWA Visita Técnica",
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/camera": "8.2.5",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/filesystem": "8.1.4",
+    "@capacitor/share": "8.0.3",
+    "jspdf": "3.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "esbuild": "0.28.2"
+  },
+  "scripts": {
+    "build:web": "node scripts/build-web.mjs",
+    "android:add": "cap add android",
+    "android:patch": "node scripts/patch-android.mjs",
+    "android:sync": "cap sync android",
+    "android:prepare": "npm run build:web && (test -d android || npm run android:add) && npm run android:patch && npm run android:sync"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "appId": "pt.luvio.visitatecnica",
+  "appName": "Visita Técnica",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "style": "DARK"
+    }
+  }
+}
