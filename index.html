@@ -176,6 +176,7 @@
   .opt-btn.active-nao { background: var(--nao-bg); border-color: var(--nao); color: var(--nao); }
   .opt-btn.active-parcial { background: var(--parcial-bg); border-color: var(--parcial); color: var(--parcial); }
   .opt-btn.active-na { background: var(--na-bg); border-color: var(--na); color: var(--na); }
+  .opt-btn.active-custom { background: #eef3f0; border-color: var(--navy); color: var(--navy); }
   .item-free-input {
     width: 100%; margin-top: 7px; padding: 8px 10px; border: 1.5px dashed var(--border); border-radius: 9px;
     font-size: 12.5px; font-weight: 500; color: var(--text-primary); background: transparent;
@@ -509,6 +510,14 @@ const CHECKLIST_SECTIONS = [
     'Portas de apartamentos já substituídas?',
   ]},
 ];
+
+// Itens com respostas próprias, em vez de Sim / Parcial / Não / NA.
+// Chave = id do item: "<id da secção>_<posição do item na secção, a começar em 0>".
+// Para outro item basta acrescentar uma linha, ex.:  instalacoes_3: ['Sim', 'Não', 'Parcial'],
+const ITEM_OPTIONS = {
+  est_0: ['Tabique', 'Mista', 'Betão'],      // Estrutura › Tipo de Construção
+};
+function itemCustomOptions(id) { return ITEM_OPTIONS[id] || null; }
 
 const PREMISSAS_SECTIONS = [
   { id:'demolicoes', name:'Demolições de Paredes', icon:'🔨', fields:[
@@ -1540,12 +1549,18 @@ function renderChecklist() {
 }
 
 function renderChecklistItemHtml(id, label) {
-  const optsHtml = OPT_KEYS.map(function(k) {
-    return `<button type="button" class="opt-btn" id="clopt-${id}-${k}" onclick="setChecklistAnswer('${id}','${k}')">${OPT_LABELS[k]}</button>`;
-  }).join('');
+  const custom = itemCustomOptions(id);
+  const optsHtml = custom
+    ? custom.map(function(o, i) {
+        return `<button type="button" class="opt-btn" id="clopt-${id}-c${i}" onclick="setChecklistOption('${id}',${i})">${escapeHtml(o)}</button>`;
+      }).join('')
+    : OPT_KEYS.map(function(k) {
+        return `<button type="button" class="opt-btn" id="clopt-${id}-${k}" onclick="setChecklistAnswer('${id}','${k}')">${OPT_LABELS[k]}</button>`;
+      }).join('');
+  const optsStyle = custom ? ` style="grid-template-columns:repeat(${custom.length},1fr)"` : '';
   return `<div class="item-card" id="clic-${id}">
     <div class="item-q">${escapeHtml(label)}</div>
-    <div class="item-options">${optsHtml}</div>
+    <div class="item-options"${optsStyle}>${optsHtml}</div>
     <input type="text" class="item-free-input" id="clfree-${id}" placeholder="ou escreve a resposta (ex: 3,00m)" oninput="setChecklistFreeText('${id}', this.value)">
     <div class="item-actions">
       <button type="button" class="item-act-btn" id="clobstoggle-${id}" onclick="toggleChecklistObs('${id}')">💬 Observações</button>
@@ -1556,15 +1571,31 @@ function renderChecklistItemHtml(id, label) {
   </div>`;
 }
 
+// Resposta tal como deve aparecer: os itens com opções próprias ignoram as chaves antigas (sim/não/…)
+function answerFor(id) {
+  const v = state.checklist.answers[id] || '';
+  return (itemCustomOptions(id) && Object.prototype.hasOwnProperty.call(OPT_LABELS, v)) ? OPT_LABELS[v] : v;
+}
+
 function refreshChecklistItemUI(id) {
-  const val = state.checklist.answers[id] || '';
+  const val = answerFor(id);
   const card = document.getElementById('clic-' + id);
   const freeInput = document.getElementById('clfree-' + id);
-  OPT_KEYS.forEach(function(k) {
-    const btn = document.getElementById('clopt-' + id + '-' + k);
-    if (btn) btn.classList.toggle('active-' + k, val === k);
-  });
-  const isCanon = OPT_KEYS.indexOf(val) !== -1;
+  const custom = itemCustomOptions(id);
+  let isCanon;
+  if (custom) {
+    custom.forEach(function(o, i) {
+      const btn = document.getElementById('clopt-' + id + '-c' + i);
+      if (btn) btn.classList.toggle('active-custom', val === o);
+    });
+    isCanon = custom.indexOf(val) !== -1;
+  } else {
+    OPT_KEYS.forEach(function(k) {
+      const btn = document.getElementById('clopt-' + id + '-' + k);
+      if (btn) btn.classList.toggle('active-' + k, val === k);
+    });
+    isCanon = OPT_KEYS.indexOf(val) !== -1;
+  }
   if (card) card.classList.toggle('answered-livre', !!val && !isCanon);
   if (freeInput) {
     if (!isCanon) freeInput.value = val;
@@ -1577,6 +1608,15 @@ function setChecklistAnswer(id, val) {
   const cur = state.checklist.answers[id];
   const next = (cur === val) ? '' : val;
   state.checklist.answers[id] = next;
+  refreshChecklistItemUI(id);
+  updateChecklistProgress();
+  saveState();
+}
+
+function setChecklistOption(id, idx) {
+  const custom = itemCustomOptions(id);
+  if (!custom || custom[idx] === undefined) return;
+  state.checklist.answers[id] = (answerFor(id) === custom[idx]) ? '' : custom[idx];
   refreshChecklistItemUI(id);
   updateChecklistProgress();
   saveState();
@@ -1613,6 +1653,7 @@ function bulkSetSectionNA(secId) {
   if (!sec) return;
   sec.items.forEach(function(_, idx) {
     const id = checklistItemId(secId, idx);
+    if (itemCustomOptions(id)) return;     // itens com opções próprias (ex.: Tipo de Construção) não têm "NA"
     state.checklist.answers[id] = 'na';
     refreshChecklistItemUI(id);
   });
@@ -2295,9 +2336,10 @@ function photosForItem(itemId, photoMap) {
   return (state.checklist.photos[itemId] || []).map(function(p) { return photoMap[p.driveId || p.tempKey]; }).filter(Boolean);
 }
 
-function drawChecklistItemPdf(ctx, label, val, obs, photos) {
+function drawChecklistItemPdf(ctx, label, val, obs, photos, customOpts) {
   const doc = ctx.doc;
-  const isCanon = OPT_KEYS.indexOf(val) !== -1;
+  const isCustom = !!customOpts && customOpts.indexOf(val) !== -1;
+  const isCanon = OPT_KEYS.indexOf(val) !== -1 || isCustom;
   const isFree = !!val && !isCanon;
 
   doc.setFont('helvetica','normal'); doc.setFontSize(9.3);
@@ -2329,7 +2371,7 @@ function drawChecklistItemPdf(ctx, label, val, obs, photos) {
   doc.text(qLines, ctx.marginL, ctx.y + qLh*0.75);
 
   if (isCanon) {
-    const badge = pdfBadgeInfo(val);
+    const badge = isCustom ? { label: String(val).toUpperCase(), bg: [232,240,236], fg: PDF_GREEN } : pdfBadgeInfo(val);
     doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
     const badgeW = Math.max(doc.getTextWidth(badge.label)+6, 16);
     doc.setFillColor(badge.bg[0],badge.bg[1],badge.bg[2]);
@@ -2413,7 +2455,7 @@ async function exportChecklistPDF() {
       drawSectionTitlePdf(ctx, si + 1, sec.name);
       sec.items.forEach(function(label, idx) {
         const id = checklistItemId(sec.id, idx);
-        drawChecklistItemPdf(ctx, label, state.checklist.answers[id] || '', state.checklist.obs[id] || '', photosForItem(id, photoMap));
+        drawChecklistItemPdf(ctx, label, answerFor(id), state.checklist.obs[id] || '', photosForItem(id, photoMap), itemCustomOptions(id));
       });
       ctx.y += 3;
     });
